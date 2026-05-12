@@ -236,6 +236,30 @@
 
   .hidden { display: none !important; }
 
+  .char-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .char-row input[type="text"] { flex: 1; min-width: 0; }
+  .char-row .handicap-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+  }
+  .char-row .handicap-controls .switch { transform: scale(0.85); transform-origin: center; }
+  .char-row .handicap-controls input[type="number"] {
+    width: 48px;
+    text-align: center;
+    padding: 0.35rem 0.3rem;
+    font-size: 0.8rem;
+  }
+  .char-row .handicap-controls label {
+    font-size: 0.65rem;
+    white-space: nowrap;
+  }
+
   .file-btn-wrap {
     position: relative;
     overflow: hidden;
@@ -627,9 +651,29 @@
   <div class="section">
     <h2>Characters</h2>
     <label>User Player Name</label>
-    <input type="text" id="userName" value="Arin">
+    <div class="char-row">
+      <input type="text" id="userName" value="Arin">
+      <div class="handicap-controls">
+        <label>Handicap</label>
+        <div class="switch">
+          <input type="checkbox" id="userHandicap">
+          <span class="slider"></span>
+        </div>
+        <input type="number" id="userModifier" value="-3" min="-19" max="-1">
+      </div>
+    </div>
     <label>AI Player Name</label>
-    <input type="text" id="aiName" value="Elara">
+    <div class="char-row">
+      <input type="text" id="aiName" value="Elara">
+      <div class="handicap-controls">
+        <label>Handicap</label>
+        <div class="switch">
+          <input type="checkbox" id="aiHandicap">
+          <span class="slider"></span>
+        </div>
+        <input type="number" id="aiModifier" value="-3" min="-19" max="-1">
+      </div>
+    </div>
   </div>
 
   <div class="section">
@@ -716,7 +760,11 @@ const state = {
     aiModel: '',
     manualReview: false,
     userName: 'Arin',
-    aiName: 'Elara'
+    aiName: 'Elara',
+    userHandicap: false,
+    userModifier: -3,
+    aiHandicap: false,
+    aiModifier: -3
   },
   scenario: null,
   userCard: null,
@@ -756,6 +804,10 @@ function saveSettings() {
   state.settings.manualReview = $('manualToggle').checked;
   state.settings.userName = $('userName').value.trim() || 'User';
   state.settings.aiName = $('aiName').value.trim() || 'AI';
+  state.settings.userHandicap = $('userHandicap').checked;
+  state.settings.userModifier = parseInt($('userModifier').value) || -3;
+  state.settings.aiHandicap = $('aiHandicap').checked;
+  state.settings.aiModifier = parseInt($('aiModifier').value) || -3;
   if (!state.scenario) state.scenario = {};
   state.scenario.scenario_goal = goalEl.value.trim();
 }
@@ -771,6 +823,10 @@ function loadSettingsUI() {
   $('manualToggle').checked = state.settings.manualReview;
   $('userName').value = state.settings.userName;
   $('aiName').value = state.settings.aiName;
+  $('userHandicap').checked = state.settings.userHandicap;
+  $('userModifier').value = state.settings.userModifier;
+  $('aiHandicap').checked = state.settings.aiHandicap;
+  $('aiModifier').value = state.settings.aiModifier;
   goalEl.value = state.scenario?.scenario_goal || '';
   toggleDual();
 }
@@ -791,6 +847,14 @@ function toggleSidebar() {
 
 function rollD20() {
   return Math.floor(Math.random() * 20) + 1;
+}
+
+function applyHandicap(roll, isUser) {
+  const on = isUser ? state.settings.userHandicap : state.settings.aiHandicap;
+  const mod = isUser ? state.settings.userModifier : state.settings.aiModifier;
+  if (!on) return { final: roll, modified: false };
+  const final = Math.max(1, Math.min(20, roll + mod));
+  return { final, modified: true, raw: roll, mod };
 }
 
 function getRollClass(roll) {
@@ -814,10 +878,13 @@ function renderEntry(role, text, meta) {
   const roleIcon = role === 'gm' ? '&#9876;' : role === 'user' ? '&#9876;' : '&#10024;';
   let metaHtml = '';
   if (meta) {
-    const rollMatch = meta.match(/Roll: (\d+)/);
+    const rollMatch = meta.match(/Roll: (\d+)(?:\s*\(raw (\d+),\s*([+-]\d+)\))?/);
     if (rollMatch) {
       const roll = parseInt(rollMatch[1]);
-      metaHtml = ` <span class="tag ${getRollClass(roll)}">&#127922; ${meta}</span>`;
+      const raw = rollMatch[2] ? parseInt(rollMatch[2]) : null;
+      const mod = rollMatch[3] ? rollMatch[3] : null;
+      const label = raw !== null ? `Roll: ${roll} (raw ${raw}, ${mod})` : `Roll: ${roll}`;
+      metaHtml = ` <span class="tag ${getRollClass(roll)}">&#127922; ${label}</span>`;
     } else {
       metaHtml = ` <span class="tag">${meta}</span>`;
     }
@@ -954,8 +1021,8 @@ function buildGmNarrativePrompt() {
 function buildResolutionPrompt(playerName, actionText, roll) {
   const history = formatHistory();
   return [
-    { role: 'system', content: `You are the Game Master. Resolve the following player action based on the scene history and the dice roll.` },
-    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ACTION TO RESOLVE]\n${playerName}: ${actionText}\n[DICE ROLL]\nRoll: ${roll}\n\n[INSTRUCTION]\nNarrate the outcome of this action. Be concise and move the story forward. Do not write actions for other players.` }
+    { role: 'system', content: `You are the Game Master. Resolve the following player action based on the scene history and the dice roll.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use the roll value to determine the quality of the outcome.` },
+    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ACTION TO RESOLVE]\n${playerName}: ${actionText}\n[DICE ROLL]\nRoll: ${roll}\n\n[INSTRUCTION]\nNarrate the outcome of this action based on the dice roll scale above. Be concise and move the story forward. Do not write actions for other players.` }
   ];
 }
 
@@ -1001,14 +1068,16 @@ async function sendUserAction() {
   if (!allowed) return;
   inputEl.value = '';
   removeWelcome();
-  const roll = rollD20();
-  showDice(roll);
-  appendLog('user', `${text} [Roll: ${roll}]`);
+  const rawRoll = rollD20();
+  const result = applyHandicap(rawRoll, true);
+  showDice(result.final);
+  const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
+  appendLog('user', `${text} [${rollMeta}]`);
   setBusy(true);
   setStatus('Resolving action...');
   showTypingIndicator();
   try {
-    const prompt = buildResolutionPrompt(state.settings.userName, text, roll);
+    const prompt = buildResolutionPrompt(state.settings.userName, text, result.final);
     const outcome = await callLLM(prompt, 'gm');
     removeTypingIndicator();
     appendLog('gm', outcome);
@@ -1050,16 +1119,18 @@ async function aiTurn() {
 }
 
 async function resolveAiAction(action) {
-  const roll = rollD20();
-  showDice(roll);
-  appendLog('ai', `${action} [Roll: ${roll}]`);
+  const rawRoll = rollD20();
+  const result = applyHandicap(rawRoll, false);
+  showDice(result.final);
+  const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
+  appendLog('ai', `${action} [${rollMeta}]`);
   state.pendingAction = null;
   state.turnPhase = 'resolution';
   setBusy(true);
   setStatus('Resolving AI action...');
   showTypingIndicator();
   try {
-    const prompt = buildResolutionPrompt(state.settings.aiName, action, roll);
+    const prompt = buildResolutionPrompt(state.settings.aiName, action, result.final);
     const outcome = await callLLM(prompt, 'gm');
     removeTypingIndicator();
     appendLog('gm', outcome);
@@ -1246,9 +1317,9 @@ function normalizeCharacterCard(data) {
 function renderLog() {
   logEl.innerHTML = '';
   state.gameLog.forEach(e => {
-    const metaMatch = e.content.match(/\[Roll: (\d+)\]/);
-    const meta = metaMatch ? `Roll: ${metaMatch[1]}` : '';
-    const text = e.content.replace(/ \[Roll: \d+\]/, '');
+    const metaMatch = e.content.match(/\[Roll: (\d+)(?:\s*\(raw (\d+),\s*([+-]\d+)\))?\]/);
+    const meta = metaMatch ? (metaMatch[2] ? `Roll: ${metaMatch[1]} (raw ${metaMatch[2]}, ${metaMatch[3]})` : `Roll: ${metaMatch[1]}`) : '';
+    const text = e.content.replace(/ \[Roll: \d+(?: \(raw \d+, [+-]\d+\))?\]/, '');
     renderEntry(e.role, text, meta);
   });
 }
