@@ -406,6 +406,74 @@
     border-left: 3px solid var(--ai);
   }
 
+  .entry .edit-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--panel-raised);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition), background var(--transition), color var(--transition);
+    padding: 0;
+    box-shadow: none;
+    line-height: 1;
+  }
+  .entry.gm:hover .edit-btn { opacity: 1; }
+  .entry .edit-btn:hover {
+    background: var(--border);
+    color: var(--text);
+    filter: none;
+    transform: none;
+    box-shadow: none;
+  }
+  .entry .edit-btn:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .entry.gm.editing {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .entry .entry-text { display: block; }
+  .entry.gm.editing .entry-text {
+    outline: none;
+    cursor: text;
+    min-height: 1.5em;
+    border-bottom: 1px dashed rgba(201, 162, 39, 0.3);
+    padding-bottom: 0.25rem;
+  }
+  .entry .edit-actions {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+  .entry .edit-actions button {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+  .entry .edited-tag {
+    font-size: 0.6rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    color: var(--muted);
+    background: rgba(122, 122, 136, 0.1);
+    font-weight: 500;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
   .entry .meta {
     font-size: 0.68rem;
     opacity: 0.65;
@@ -588,6 +656,7 @@
     #hamburger { display: block; }
     .entry { max-width: 95%; }
     .entry.gm { max-width: 98%; }
+    .entry .edit-btn { opacity: 1; }
   }
 </style>
 </head>
@@ -918,10 +987,11 @@ function getDiceChipClass(roll) {
   return '';
 }
 
-function renderEntry(role, text, meta) {
+function renderEntry(role, text, meta, index, edited) {
   removeWelcome();
   const div = document.createElement('div');
   div.className = `entry ${role}`;
+  if (index !== undefined && index !== null) div.dataset.logIndex = index;
   const roleLabel = role === 'gm' ? 'Game Master' : role === 'user' ? state.settings.userName : state.settings.aiName;
   const roleIcon = role === 'gm' ? '&#9876;' : role === 'user' ? '&#9876;' : '&#10024;';
   let metaHtml = '';
@@ -937,20 +1007,158 @@ function renderEntry(role, text, meta) {
       metaHtml = ` <span class="tag">${escapeHtml(meta)}</span>`;
     }
   }
-  div.innerHTML = `<div class="meta"><span class="role-icon">${roleIcon}</span> ${escapeHtml(roleLabel)}${metaHtml}</div>${escapeHtml(text)}`;
+  const editedTag = (role === 'gm' && edited) ? ' <span class="edited-tag">(edited)</span>' : '';
+  const editBtn = (role === 'gm' && index !== undefined && index !== null)
+    ? `<button class="edit-btn" title="Edit" onclick="startEditEntry(${index})">&#9998;</button>`
+    : '';
+  div.innerHTML = `<div class="meta"><span class="role-icon">${roleIcon}</span> ${escapeHtml(roleLabel)}${metaHtml}${editedTag}</div><span class="entry-text">${escapeHtml(text)}</span>${editBtn}`;
   logEl.appendChild(div);
   logEl.scrollTop = logEl.scrollHeight;
 }
 
 function appendLog(role, text, meta) {
   state.gameLog.push({ role, content: text });
-  renderEntry(role, text, meta);
+  renderEntry(role, text, meta, state.gameLog.length - 1, false);
 }
 
 function escapeHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+const editingState = { index: null };
+
+function startEditEntry(index) {
+  if (editingState.index !== null) {
+    alert('Another entry is currently being edited. Save or cancel that edit first.');
+    return;
+  }
+  if (index < 0 || index >= state.gameLog.length) return;
+  const entry = state.gameLog[index];
+  if (entry.role !== 'gm') return;
+
+  if (index < state.gameLog.length - 1) {
+    const proceed = confirm('This GM entry has subsequent actions after it. Editing may cause story inconsistencies. Continue?');
+    if (!proceed) return;
+  }
+
+  editingState.index = index;
+  const el = logEl.querySelector(`.entry[data-log-index="${index}"]`);
+  if (!el) { editingState.index = null; return; }
+
+  el.classList.add('editing');
+  const editBtn = el.querySelector('.edit-btn');
+  if (editBtn) editBtn.style.display = 'none';
+
+  const textSpan = el.querySelector('.entry-text');
+  if (!textSpan) { editingState.index = null; return; }
+  const originalText = textSpan.textContent;
+  textSpan.contentEditable = 'true';
+  textSpan.focus();
+
+  const range = document.createRange();
+  range.selectNodeContents(textSpan);
+  range.collapse(false);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  const actions = document.createElement('div');
+  actions.className = 'edit-actions';
+  actions.innerHTML = '<button class="secondary" onclick="cancelEditEntry(' + index + ')">Cancel</button><button onclick="saveEditEntry(' + index + ')">Save</button>';
+  el.appendChild(actions);
+
+  const keyHandler = (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      textSpan.textContent = originalText;
+      cleanup();
+      cancelEditEntry(index);
+    } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      cleanup();
+      saveEditEntry(index);
+    }
+  };
+  const cleanup = () => {
+    textSpan.removeEventListener('keydown', keyHandler);
+  };
+  textSpan.addEventListener('keydown', keyHandler);
+  textSpan._keyHandler = keyHandler;
+}
+
+function saveEditEntry(index) {
+  if (editingState.index !== index) return;
+  const el = logEl.querySelector(`.entry[data-log-index="${index}"]`);
+  if (!el) { editingState.index = null; return; }
+
+  const textSpan = el.querySelector('.entry-text');
+  if (textSpan && textSpan._keyHandler) {
+    textSpan.removeEventListener('keydown', textSpan._keyHandler);
+  }
+
+  const newText = textSpan ? textSpan.textContent.trim() : '';
+  if (!newText) {
+    alert('GM response cannot be empty.');
+    return;
+  }
+
+  state.gameLog[index].content = newText;
+  state.gameLog[index].edited = true;
+
+  el.classList.remove('editing');
+  if (textSpan) textSpan.contentEditable = 'false';
+
+  const actions = el.querySelector('.edit-actions');
+  if (actions) actions.remove();
+
+  const editBtn = el.querySelector('.edit-btn');
+  if (editBtn) editBtn.style.display = '';
+
+  const metaEl = el.querySelector('.meta');
+  if (metaEl && !metaEl.querySelector('.edited-tag')) {
+    const editedTag = document.createElement('span');
+    editedTag.className = 'edited-tag';
+    editedTag.textContent = '(edited)';
+    metaEl.appendChild(document.createTextNode(' '));
+    metaEl.appendChild(editedTag);
+  }
+
+  if (textSpan) textSpan.textContent = newText;
+
+  editingState.index = null;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function cancelEditEntry(index) {
+  if (editingState.index !== index) return;
+  const el = logEl.querySelector(`.entry[data-log-index="${index}"]`);
+  if (!el) { editingState.index = null; return; }
+
+  const textSpan = el.querySelector('.entry-text');
+  if (textSpan && textSpan._keyHandler) {
+    textSpan.removeEventListener('keydown', textSpan._keyHandler);
+  }
+
+  const entry = state.gameLog[index];
+  const rawText = entry.content;
+  const text = rawText.replace(/ \[Roll: \d+(?: \(raw \d+, [+-]\d+\))?\]/, '');
+
+  el.classList.remove('editing');
+  if (textSpan) {
+    textSpan.contentEditable = 'false';
+    textSpan.textContent = text;
+  }
+
+  const actions = el.querySelector('.edit-actions');
+  if (actions) actions.remove();
+
+  const editBtn = el.querySelector('.edit-btn');
+  if (editBtn) editBtn.style.display = '';
+
+  editingState.index = null;
+  logEl.scrollTop = logEl.scrollHeight;
 }
 
 function setBusy(busy) {
@@ -1084,7 +1292,7 @@ function buildRoundResolutionPrompt(round) {
   const userAction = round?.user || { name: state.settings.userName, action: 'Passes for now.', roll: null };
   const aiAction = round?.ai || { name: state.settings.aiName, action: 'Waits for the moment.', roll: null };
   return [
-    { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome.` },
+    { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, erotic, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome.` },
     { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ROUND ACTIONS TO RESOLVE]\n${userAction.name}: ${userAction.action}\n${formatRoundRoll(userAction)}\n\n${aiAction.name}: ${aiAction.action}\n${formatRoundRoll(aiAction)}\n\n[INSTRUCTION]\nNarrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions for the player characters beyond resolving what they already declared.` }
   ];
 }
@@ -1455,11 +1663,11 @@ function normalizeCharacterCard(data) {
 
 function renderLog() {
   logEl.innerHTML = '';
-  state.gameLog.forEach(e => {
+  state.gameLog.forEach((e, i) => {
     const metaMatch = e.content.match(/\[Roll: (\d+)(?:\s*\(raw (\d+),\s*([+-]\d+)\))?\]/);
     const meta = metaMatch ? (metaMatch[2] ? `Roll: ${metaMatch[1]} (raw ${metaMatch[2]}, ${metaMatch[3]})` : `Roll: ${metaMatch[1]}`) : '';
     const text = e.content.replace(/ \[Roll: \d+(?: \(raw \d+, [+-]\d+\))?\]/, '');
-    renderEntry(e.role, text, meta);
+    renderEntry(e.role, text, meta, i, e.edited === true);
   });
 }
 
