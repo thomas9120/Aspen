@@ -34,19 +34,22 @@ The game proceeds in discrete turns. Each full round consists of the following p
 2. **User Player Phase**
    - The user types their character's action or dialogue.
    - The frontend rolls a d20.
-   - The action text + roll result are sent to the GM LLM for resolution.
-   - The GM returns the narrative outcome.
+   - The action text + roll result are added to the scene log as a pending round declaration.
 
 3. **AI Player Phase**
-   - The AI Player LLM (or the same LLM in a different persona) receives the updated scene history and its character card.
+   - The AI Player LLM (or the same LLM in a different persona) receives the updated scene history, including the user's pending declaration, and its character card.
    - It generates a concise action or line of dialogue.
    - If **Manual Review** is enabled, the UI pauses and shows the generated action in an editable text box. The user can edit it and click **"Confirm Roll"** to proceed.
    - The frontend rolls a d20.
-   - The action text + roll result are sent to the GM LLM for resolution.
-   - The GM returns the narrative outcome.
+   - The action text + roll result are added to the scene log as the AI player's pending round declaration.
 
-4. **Loop**
-   - The GM narrates the updated scene, and the cycle repeats.
+4. **GM Resolution Phase**
+   - The GM LLM receives the full scene history plus both player declarations and roll results for the round.
+   - It resolves both actions together in whatever order makes sense for the scene.
+   - It moves the scenario forward and opens the next player choice.
+
+5. **Loop**
+   - The cycle returns to the User Player Phase.
 
 **Important:** Every API call is stateless. The frontend maintains a clean internal `gameLog` and reconstructs the full prompt for each role on every request. This prevents context contamination when using a single LLM for multiple roles.
 
@@ -90,7 +93,7 @@ gameLog = [
 ### GM Prompt Template
 ```
 [SYSTEM]
-You are the Game Master (GM) of a tabletop RPG. You describe the world, control NPCs, and set the scene. You do NOT control the Player characters. Be vivid and concise.
+You are the Game Master (GM) of a tabletop RPG and an active guide for the scenario. You describe the world, control NPCs, set the scene, and keep momentum toward the Scenario Goal when one exists. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous. Introduce meaningful developments such as new information, NPC responses, environmental changes, emotional beats, choices, opportunities, or natural consequences. You do NOT control the Player characters. Be vivid and concise.
 
 [WORLD INFO]
 {scenario_description}
@@ -106,7 +109,7 @@ The central tension or objective right now is: {scenario_goal}
 {formatted_history}
 
 [INSTRUCTION]
-Describe the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. End your response by presenting a clear dilemma, danger, or 2–3 concrete courses of action tied to the goal or situation. Ask the players directly what they do next. Do not write actions for the players.
+Describe what has changed since the last turn and frame the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. Move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice. Do not write actions for the players.
 ```
 
 ### AI Player Prompt Template
@@ -127,18 +130,20 @@ Based ONLY on the scene history above, what does {ai_name} do or say next? Respo
 ### Resolution Prompt Template
 ```
 [SYSTEM]
-You are the Game Master. Resolve the following player action based on the scene history and the dice roll.
+You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous.
 
 [SCENE HISTORY]
 {formatted_history}
 
-[ACTION TO RESOLVE]
-{player_name}: {action_text}
-[DICE ROLL]
-{Roll: XX}
+[ROUND ACTIONS TO RESOLVE]
+{user_name}: {user_action_text}
+{user_roll_or_no_roll}
+
+{ai_name}: {ai_action_text}
+{ai_roll_or_no_roll}
 
 [INSTRUCTION]
-Narrate the outcome of this action. Be concise and move the story forward. Do not write actions for other players.
+Narrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions for the player characters beyond resolving what they already declared.
 ```
 
 ---
@@ -254,7 +259,7 @@ const state = {
   gameLog: [],
   turnPhase: 'gm', // 'gm' | 'user' | 'ai' | 'ai_review' | 'resolution'
   lastRoll: null,
-  pendingAction: null
+  pendingAction: null // null or { user: { name, action, roll, rollMeta }, ai: { name, action, roll, rollMeta } }
 };
 ```
 
@@ -277,4 +282,3 @@ No external state management library is used. Everything is vanilla JS.
 - Should the GM be allowed to request specific skill checks (e.g., "Roll a d20 for Athletics")?
 - Could we add a "Party" mode with more than one AI Player?
 - Should we support image generation APIs for scene illustrations?
-

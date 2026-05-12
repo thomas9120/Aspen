@@ -1063,22 +1063,29 @@ function buildGmNarrativePrompt() {
   }
   userContent += `[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\n`;
   if (isFirstTurn) {
-    userContent += `Set the opening scene using the Starting Scene provided above. Introduce the situation vividly and end by setting the stage for both players to declare their first actions. Do not write actions for the players.`;
+    userContent += `Set the opening scene using the Starting Scene provided above. Introduce the situation vividly, establish the current tone, and end by setting the stage for both players to declare their first actions. Do not write actions for the players.`;
   } else {
-    userContent += `Describe the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. End your response by presenting a clear dilemma, danger, or 2–3 concrete courses of action tied to the goal or situation. Ask the players directly what they do next. Do not write actions for the players.`;
+    userContent += `Describe what has changed since the last turn and frame the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. Move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice. Do not write actions for the players.`;
   }
 
   return [
-    { role: 'system', content: `You are the Game Master (GM) of a tabletop RPG. You describe the world, control NPCs, and set the scene. You do NOT control the Player characters. Be vivid and concise.` },
+    { role: 'system', content: `You are the Game Master (GM) of a tabletop RPG and an active guide for the scenario. You describe the world, control NPCs, set the scene, and keep momentum toward the Scenario Goal when one exists. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous. Introduce meaningful developments such as new information, NPC responses, environmental changes, emotional beats, choices, opportunities, or natural consequences. Do NOT control the Player characters. Be vivid and concise.` },
     { role: 'user', content: userContent }
   ];
 }
 
-function buildResolutionPrompt(playerName, actionText, roll) {
+function formatRoundRoll(action) {
+  if (!action || action.roll === null || action.roll === undefined) return 'No roll';
+  return action.rollMeta || `Roll: ${action.roll}`;
+}
+
+function buildRoundResolutionPrompt(round) {
   const history = formatHistory();
+  const userAction = round?.user || { name: state.settings.userName, action: 'Passes for now.', roll: null };
+  const aiAction = round?.ai || { name: state.settings.aiName, action: 'Waits for the moment.', roll: null };
   return [
-    { role: 'system', content: `You are the Game Master. Resolve the following player action based on the scene history and the dice roll.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use the roll value to determine the quality of the outcome.` },
-    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ACTION TO RESOLVE]\n${playerName}: ${actionText}\n[DICE ROLL]\nRoll: ${roll}\n\n[INSTRUCTION]\nNarrate the outcome of this action based on the dice roll scale above. Be concise and move the story forward. Do not write actions for other players.` }
+    { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome.` },
+    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ROUND ACTIONS TO RESOLVE]\n${userAction.name}: ${userAction.action}\n${formatRoundRoll(userAction)}\n\n${aiAction.name}: ${aiAction.action}\n${formatRoundRoll(aiAction)}\n\n[INSTRUCTION]\nNarrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions for the player characters beyond resolving what they already declared.` }
   ];
 }
 
@@ -1088,7 +1095,7 @@ function buildAiPrompt() {
   const history = formatHistory();
   return [
     { role: 'system', content: `You are roleplaying as ${s.aiName}. Personality: ${personality}. You are a PLAYER, not the GM. You only control your own character's thoughts, speech, and actions. You do NOT know anything the GM hasn't explicitly told you. You do NOT narrate the world.` },
-    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\nBased ONLY on the scene history above, what does ${s.aiName} do or say next? Respond with a single concise action or line of dialogue. Do not narrate the environment or other characters.` }
+    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\nThe user player has declared their action for this round, and the GM has not resolved it yet. Based ONLY on the scene history above, what does ${s.aiName} do or say for the same round? Respond with a single concise action or line of dialogue. Do not narrate the environment or other characters.` }
   ];
 }
 
@@ -1129,35 +1136,42 @@ async function sendUserAction() {
   showDice(result.final);
   const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
   appendLog('user', `${text} [${rollMeta}]`);
-  setBusy(true);
-  setStatus('Resolving action...');
-  showTypingIndicator();
+  state.pendingAction = {
+    user: {
+      name: state.settings.userName,
+      action: text,
+      roll: result.final,
+      rollMeta
+    },
+    ai: null
+  };
+  state.turnPhase = 'ai';
   try {
-    const prompt = buildResolutionPrompt(state.settings.userName, text, result.final);
-    const outcome = await callLLM(prompt, 'gm');
-    removeTypingIndicator();
-    appendLog('gm', outcome);
-    state.turnPhase = 'ai';
     await aiTurn();
   } catch (e) {
-    removeTypingIndicator();
-    appendLog('gm', `[Error resolving action: ${e.message}]`);
+    appendLog('gm', `[Error during AI turn: ${e.message}]`);
     setStatus('Error — see log');
-  } finally {
-    setBusy(false);
   }
 }
 
 async function aiTurn() {
   saveSettings();
   if (state.turnPhase !== 'ai') return;
+  if (!state.pendingAction?.user) {
+    state.pendingAction = {
+      user: { name: state.settings.userName, action: 'Passes for now.', roll: null, rollMeta: 'No roll' },
+      ai: null
+    };
+  }
   setBusy(true);
   setStatus(`${state.settings.aiName} is deciding...`);
+  let reviewStarted = false;
   try {
     const prompt = buildAiPrompt();
     const action = await callLLM(prompt, 'ai');
-    state.pendingAction = action;
+    state.pendingAction.aiDraft = action;
     if (state.settings.manualReview) {
+      reviewStarted = true;
       state.turnPhase = 'ai_review';
       aiReviewText.value = action;
       overlayEl.classList.add('show');
@@ -1170,7 +1184,7 @@ async function aiTurn() {
     appendLog('gm', `[Error generating AI action: ${e.message}]`);
     setStatus('Error — see log');
   } finally {
-    if (!state.settings.manualReview) setBusy(false);
+    if (!reviewStarted) setBusy(false);
   }
 }
 
@@ -1180,22 +1194,35 @@ async function resolveAiAction(action) {
   showDice(result.final);
   const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
   appendLog('ai', `${action} [${rollMeta}]`);
-  state.pendingAction = null;
+  if (!state.pendingAction?.user) {
+    state.pendingAction = {
+      user: { name: state.settings.userName, action: 'Passes for now.', roll: null, rollMeta: 'No roll' },
+      ai: null
+    };
+  }
+  state.pendingAction.ai = {
+    name: state.settings.aiName,
+    action,
+    roll: result.final,
+    rollMeta
+  };
+  delete state.pendingAction.aiDraft;
   state.turnPhase = 'resolution';
   setBusy(true);
-  setStatus('Resolving AI action...');
+  setStatus('Resolving round...');
   showTypingIndicator();
   try {
-    const prompt = buildResolutionPrompt(state.settings.aiName, action, result.final);
+    const prompt = buildRoundResolutionPrompt(state.pendingAction);
     const outcome = await callLLM(prompt, 'gm');
     removeTypingIndicator();
     appendLog('gm', outcome);
+    state.pendingAction = null;
     state.turnPhase = 'user';
     inputEl.placeholder = `${state.settings.userName}, what do you do?`;
     setStatus(`Waiting for ${state.settings.userName}...`);
   } catch (e) {
     removeTypingIndicator();
-    appendLog('gm', `[Error resolving AI action: ${e.message}]`);
+    appendLog('gm', `[Error resolving round: ${e.message}]`);
     setStatus('Error — see log');
   } finally {
     setBusy(false);
@@ -1209,7 +1236,7 @@ async function confirmAiAction() {
   overlayEl.classList.remove('show');
   setModalBusy(false);
   try { await resolveAiAction(text); }
-  catch (e) { appendLog('gm', `[Error resolving AI action: ${e.message}]`); setStatus('Error — see log'); }
+  catch (e) { appendLog('gm', `[Error resolving round: ${e.message}]`); setStatus('Error — see log'); }
 }
 
 async function regenerateAiAction() {
@@ -1218,7 +1245,8 @@ async function regenerateAiAction() {
   try {
     const prompt = buildAiPrompt();
     const action = await callLLM(prompt, 'ai');
-    state.pendingAction = action;
+    if (!state.pendingAction) state.pendingAction = {};
+    state.pendingAction.aiDraft = action;
     aiReviewText.value = action;
   } catch (e) {
     aiReviewText.value = `[Error: ${e.message}]`;
@@ -1230,6 +1258,18 @@ async function regenerateAiAction() {
 
 async function skipTurn() {
   if (state.turnPhase === 'user') {
+    saveSettings();
+    const passText = 'Passes for now.';
+    appendLog('user', passText);
+    state.pendingAction = {
+      user: {
+        name: state.settings.userName,
+        action: passText,
+        roll: null,
+        rollMeta: 'No roll'
+      },
+      ai: null
+    };
     state.turnPhase = 'ai';
     try { await aiTurn(); }
     catch (e) { appendLog('gm', `[Error during AI turn: ${e.message}]`); setStatus('Error — see log'); }
