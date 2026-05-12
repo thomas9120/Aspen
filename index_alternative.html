@@ -1063,13 +1063,13 @@ function buildGmNarrativePrompt() {
   }
   userContent += `[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\n`;
   if (isFirstTurn) {
-    userContent += `Set the opening scene using the Starting Scene provided above. Introduce the situation vividly and end by setting the stage for both players to declare their first actions. Do not write actions for the players.`;
+    userContent += `Set the opening scene using the Starting Scene provided above. Introduce the situation vividly, establish the current tone, and end by setting the stage for both players to declare their first actions. Do not write actions for the players.`;
   } else {
-    userContent += `Describe the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. End your response by presenting a clear dilemma, danger, or 2–3 concrete courses of action tied to the goal or situation. Ask the players directly what they do next. Do not write actions for the players.`;
+    userContent += `Describe what has changed since the last turn and frame the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. Move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice. Do not write actions for the players.`;
   }
 
   return [
-    { role: 'system', content: `You are the Game Master (GM) of a tabletop RPG. You describe the world, control NPCs, and set the scene. You do NOT control the Player characters. Be vivid and concise.` },
+    { role: 'system', content: `You are the Game Master (GM) of a tabletop RPG and an active guide for the scenario. You describe the world, control NPCs, set the scene, and keep momentum toward the Scenario Goal when one exists. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous. Introduce meaningful developments such as new information, NPC responses, environmental changes, emotional beats, choices, opportunities, or natural consequences. Do NOT control the Player characters. Be vivid and concise.` },
     { role: 'user', content: userContent }
   ];
 }
@@ -1077,8 +1077,8 @@ function buildGmNarrativePrompt() {
 function buildResolutionPrompt(playerName, actionText, roll) {
   const history = formatHistory();
   return [
-    { role: 'system', content: `You are the Game Master. Resolve the following player action based on the scene history and the dice roll.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use the roll value to determine the quality of the outcome.` },
-    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ACTION TO RESOLVE]\n${playerName}: ${actionText}\n[DICE ROLL]\nRoll: ${roll}\n\n[INSTRUCTION]\nNarrate the outcome of this action based on the dice roll scale above. Be concise and move the story forward. Do not write actions for other players.` }
+    { role: 'system', content: `You are the Game Master. Resolve the following player action based on the scene history and the dice roll. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use the roll value to determine the quality of the outcome.` },
+    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ACTION TO RESOLVE]\n${playerName}: ${actionText}\n[DICE ROLL]\nRoll: ${roll}\n\n[INSTRUCTION]\nNarrate the direct outcome of this action based on the dice roll scale above. After resolving the action, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write actions for other players.` }
   ];
 }
 

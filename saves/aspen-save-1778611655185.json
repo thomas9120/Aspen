@@ -1,0 +1,53 @@
+{
+  "format": "aspen-save-v1",
+  "exported_at": "2026-05-12T18:47:35.185Z",
+  "settings": {
+    "api_url": "http://localhost:8080/v1",
+    "api_key": "",
+    "model": "",
+    "dual_llm_enabled": false,
+    "ai_api_url": "",
+    "ai_api_key": "",
+    "ai_model": "",
+    "ai_auto_mode": true,
+    "user_name": "Kronis",
+    "ai_name": "Elara Moonwhisper",
+    "user_handicap": false,
+    "user_modifier": -3,
+    "ai_handicap": false,
+    "ai_modifier": -3
+  },
+  "scenario": {
+    "format": "aspen-scenario-v1",
+    "title": "The Sunken Spire",
+    "description": "A coastal town has been plagued by strange lights beneath the waves. The old lighthouse keeper swears he saw a spire rise from the deep during the last storm, only to vanish again before dawn. Merchants are whispering of wrecks along the eastern reef, and a local scholar is offering a hefty reward for anyone brave enough to investigate.",
+    "world_info": "Magic is rare and often mistrusted. The sea is unpredictable, governed by old tides that sailors claim have moods of their own. Pirates patrol the eastern routes, and the local militia is underfunded and overworked. Ruins from an older civilization dot the coastline, but most have been picked clean by scavengers.",
+    "starting_scene": "You stand on the cliffs above the harbor, salt wind biting at your cloak. Below, fishing boats bob in the gray water while gulls cry overhead. The storm is rolling in from the east, and with it comes the strange, pulsing light beneath the waves—the same light the keeper described.",
+    "scenario_goal": "Investigate the sunken spire and uncover why the lights beneath the waves have returned before the storm seals the harbor."
+  },
+  "user_card": {
+    "name": "Kronis",
+    "summary": "Large athletic but looks scruffy, barbaric",
+    "personality": "Stern and rigid",
+    "first_message": "",
+    "example_dialogue": []
+  },
+  "ai_card": {
+    "name": "Elara Moonwhisper",
+    "summary": "A sharp-tongued elven rogue with a knack for getting into trouble and an even better knack for getting out of it. She carries a shortbow and a set of lockpicks she claims were a gift from a dwarven prince.",
+    "personality": "Cynical, fiercely loyal to friends, hates authority, sarcastic humor, surprisingly soft-hearted beneath the armor.",
+    "first_message": "*adjusts her quiver and glances over her shoulder* Keep up, or you'll get left behind. And trust me, you don't want to be alone in these ruins.",
+    "example_dialogue": [
+      "{{user}}: Who are you?",
+      "{{char}}: Someone who'd rather not be here. But since I am... let's at least get paid.",
+      "{{user}}: We should split up.",
+      "{{char}}: Oh, absolutely. I'll take the path with the treasure and you take the one with the horrible death. Deal?"
+    ]
+  },
+  "game_log": [
+    {
+      "role": "gm",
+      "content": "The salt spray stings your eyes, and the wind howls across the jagged cliffs, carrying the scent of ozone and rot. Below, the harbor is a frantic mess of activity; fishermen are frantically securing ropes and hauling in nets, their movements hurried and fearful. The gray waters of the bay churn violently, but it isn't just the storm brewing on the horizon that commands attention.\n\nDeep beneath the surface, a rhythmic, sickly violet light pulses. It glows from the depths, casting long, dancing shadows against the underside of the cliffs. It is a rhythmic thrum, a light that feels less like a reflection and more like a heartbeat.\n\nFrom the village below, the frantic shouting of the harbor master mixes with the low, ominous rumble of thunder. The old lighthouse keeper stands at the edge of his stone tower, a silhouette of dread against the darkening sky, pointing a trembling finger toward the eastern reef where the light seems strongest. The storm is closing in fast, and the sea is beginning to boil with an unnatural energy.\n\nThe path leads down the treacherous cliffside toward the docks, or perhaps toward the scholar’s manor to gather more intel before the tide turns.\n\n**How do Kronis and Elara proceed?**"
+    }
+  ]
+}
