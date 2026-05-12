@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scenario / World Creator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #2a2a4e;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #e94560;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2a2a4e;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #b8b8b8;
+            font-size: 0.9rem;
+        }
+
+        label span { color: #e94560; }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background: #0f3460;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        textarea.large { min-height: 180px; }
+
+        .hint {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #2a2a4e;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #d63851;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+        }
+
+        .btn-secondary {
+            background: #0f3460;
+            color: #e0e0e0;
+        }
+        .btn-secondary:hover {
+            background: #1a4570;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #2a2a4e;
+            color: #e0e0e0;
+        }
+        .btn-outline:hover {
+            border-color: #e94560;
+            color: #e94560;
+        }
+
+        .btn-export {
+            background: #9b59b6;
+            color: white;
+        }
+        .btn-export:hover {
+            background: #8e44ad;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+        }
+
+        .preview-sticky {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: #0f3460;
+            border: none;
+            border-radius: 6px;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            flex: 0;
+            min-width: auto;
+        }
+
+        .tab.active {
+            background: #e94560;
+            color: white;
+        }
+        .tab:hover:not(.active) { background: #1a4570; }
+
+        .preview-content {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            max-height: 600px;
+            overflow: auto;
+        }
+
+        .preview-content pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #a8d8ff;
+        }
+
+        .empty-state {
+            color: #666;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #4caf50; color: white; }
+        .toast.error { background: #f44336; color: white; }
+
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; }
+            .actions-bar { flex-direction: column; }
+            button { width: 100%; }
+            .preview-sticky { position: static; max-height: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Scenario / World Creator</h1>
+            <p>Create and export scenario &amp; world JSONs for Project Aspen and other LLM RPG tools</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="card">
+                <h2 class="section-title">Scenario Information</h2>
+                <form id="scenarioForm">
+                    <div class="form-group">
+                        <label for="scenTitle">Title <span>*</span></label>
+                        <input type="text" id="scenTitle" placeholder="e.g., The Sunken Spire" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenDescription">Description</label>
+                        <textarea id="scenDescription" class="large" placeholder="The hook, setting, and inciting incident. What is happening and why should the players care?"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenWorldInfo">World Info</label>
+                        <textarea id="scenWorldInfo" class="large" placeholder="Rules of the world: magic level, factions, technology, cultural norms, dangers..."></textarea>
+                        <div class="hint">This is injected into every GM prompt as context.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenStartingScene">Starting Scene</label>
+                        <textarea id="scenStartingScene" class="large" placeholder="Where do the players begin? Describe the immediate environment and mood."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenGoal">Scenario Goal / Current Conflict</label>
+                        <textarea id="scenGoal" placeholder="The central tension or objective: what the players are trying to achieve right now."></textarea>
+                        <div class="hint">This keeps the GM narratively focused. Editable later in Aspen.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenWorldEntries">World Info Entries (Optional)</label>
+                        <textarea id="scenWorldEntries" class="large" placeholder='[
+  {"key": "The Red Guild", "content": "A thieves guild operating out of the docks."},
+  {"key": "Storm Curse", "content": "Every seventh year, the sea turns black for three days."}
+]'></textarea>
+                        <div class="hint">JSON array of keyed lore entries. Aspen ignores this for now, but other tools may use it.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenLorebook">Lorebook (Optional)</label>
+                        <textarea id="scenLorebook" class="large" placeholder='[
+  {"key": "Ancient Runes", "content": "These runes predate the current kingdom by millennia."}
+]'></textarea>
+                        <div class="hint">Extra deep-lore entries for advanced tools. Ignored by Aspen unless future support is added.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="scenTags">Tags</label>
+                        <input type="text" id="scenTags" placeholder="e.g., fantasy, horror, coastal, mystery">
+                        <div class="hint">Separate tags with commas</div>
+                    </div>
+
+                    <div class="actions-bar">
+                        <button type="button" class="btn-primary" id="generateBtn">Generate Card</button>
+                        <button type="button" class="btn-secondary" id="copyBtn">Copy JSON</button>
+                        <button type="button" class="btn-export" id="downloadBtn">Download</button>
+                        <button type="button" class="btn-secondary" id="loadBtn">Load Card</button>
+                        <button type="button" class="btn-outline" id="resetBtn">Reset</button>
+                    </div>
+                    <input type="file" id="fileInput" accept=".json" style="display: none;">
+                </form>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-sticky">
+                <div class="card">
+                    <h2 class="section-title">Preview</h2>
+                    <div class="tabs">
+                        <button class="tab active" data-tab="json">Aspen JSON</button>
+                        <button class="tab" data-tab="text">Plain Text</button>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <div class="empty-state">
+                            <p>Fill in the scenario information and click "Generate Card" to see the preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentTab = 'json';
+        let generatedCard = null;
+
+        const form = document.getElementById('scenarioForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const fileInput = document.getElementById('fileInput');
+        const previewContent = document.getElementById('previewContent');
+        const tabs = document.querySelectorAll('.tab');
+        const toast = document.getElementById('toast');
+
+        const fields = {
+            title: document.getElementById('scenTitle'),
+            description: document.getElementById('scenDescription'),
+            worldInfo: document.getElementById('scenWorldInfo'),
+            startingScene: document.getElementById('scenStartingScene'),
+            goal: document.getElementById('scenGoal'),
+            worldEntries: document.getElementById('scenWorldEntries'),
+            lorebook: document.getElementById('scenLorebook'),
+            tags: document.getElementById('scenTags')
+        };
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTab = tab.dataset.tab;
+                updatePreview();
+            });
+        });
+
+        function generateCard() {
+            const tags = fields.tags.value
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+
+            let worldEntries = null;
+            try {
+                const raw = fields.worldEntries.value.trim();
+                if (raw) worldEntries = JSON.parse(raw);
+            } catch (e) {
+                showToast('World Info Entries is not valid JSON. Ignoring.', 'error');
+            }
+
+            let lorebook = null;
+            try {
+                const raw = fields.lorebook.value.trim();
+                if (raw) lorebook = JSON.parse(raw);
+            } catch (e) {
+                showToast('Lorebook is not valid JSON. Ignoring.', 'error');
+            }
+
+            generatedCard = {
+                format: 'aspen-scenario-v1',
+                title: fields.title.value.trim(),
+                description: fields.description.value.trim(),
+                world_info: fields.worldInfo.value.trim(),
+                starting_scene: fields.startingScene.value.trim(),
+                scenario_goal: fields.goal.value.trim(),
+                tags: tags,
+                created_date: new Date().toISOString()
+            };
+
+            if (worldEntries) generatedCard.world_info_entries = worldEntries;
+            if (lorebook) generatedCard.lorebook = lorebook;
+
+            // Remove empty fields
+            Object.keys(generatedCard).forEach(key => {
+                if (generatedCard[key] === '' || (Array.isArray(generatedCard[key]) && generatedCard[key].length === 0)) {
+                    delete generatedCard[key];
+                }
+            });
+
+            updatePreview();
+            showToast('Scenario card generated!', 'success');
+        }
+
+        function updatePreview() {
+            if (!generatedCard) {
+                previewContent.innerHTML = `
+                    <div class="empty-state">
+                        <p>Fill in the scenario information and click "Generate Card" to see the preview</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let content = '';
+            if (currentTab === 'json') {
+                content = `<pre>${JSON.stringify(generatedCard, null, 2)}</pre>`;
+            } else {
+                content = '<pre>';
+                if (generatedCard.title) content += `Title: ${generatedCard.title}\n\n`;
+                if (generatedCard.description) content += `Description:\n${generatedCard.description}\n\n`;
+                if (generatedCard.world_info) content += `World Info:\n${generatedCard.world_info}\n\n`;
+                if (generatedCard.starting_scene) content += `Starting Scene:\n${generatedCard.starting_scene}\n\n`;
+                if (generatedCard.scenario_goal) content += `Scenario Goal:\n${generatedCard.scenario_goal}\n\n`;
+                if (generatedCard.world_info_entries) content += `World Info Entries:\n${JSON.stringify(generatedCard.world_info_entries, null, 2)}\n\n`;
+                if (generatedCard.lorebook) content += `Lorebook:\n${JSON.stringify(generatedCard.lorebook, null, 2)}\n\n`;
+                if (generatedCard.tags && generatedCard.tags.length > 0) content += `Tags: ${generatedCard.tags.join(', ')}`;
+                content += '</pre>';
+            }
+            previewContent.innerHTML = content;
+        }
+
+        async function copyToClipboard() {
+            if (!generatedCard) { showToast('Generate a card first!', 'error'); return; }
+            try {
+                await navigator.clipboard.writeText(JSON.stringify(generatedCard, null, 2));
+                showToast('Copied to clipboard!', 'success');
+            } catch (err) { showToast('Failed to copy', 'error'); }
+        }
+
+        function downloadJSON() {
+            if (!generatedCard) { showToast('Generate a card first!', 'error'); return; }
+            const filename = `${generatedCard.title || 'scenario'}.json`;
+            const blob = new Blob([JSON.stringify(generatedCard, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Downloaded ${filename}`, 'success');
+        }
+
+        function loadCardFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    const fieldMap = {
+                        title: 'title',
+                        description: 'description',
+                        world_info: 'worldInfo',
+                        starting_scene: 'startingScene',
+                        scenario_goal: 'goal'
+                    };
+
+                    Object.keys(fieldMap).forEach(jsonKey => {
+                        const formKey = fieldMap[jsonKey];
+                        if (data[jsonKey] !== undefined && data[jsonKey] !== null) {
+                            fields[formKey].value = String(data[jsonKey]);
+                        } else {
+                            fields[formKey].value = '';
+                        }
+                    });
+
+                    if (data.world_info_entries) {
+                        fields.worldEntries.value = JSON.stringify(data.world_info_entries, null, 2);
+                    } else {
+                        fields.worldEntries.value = '';
+                    }
+
+                    if (data.lorebook) {
+                        fields.lorebook.value = JSON.stringify(data.lorebook, null, 2);
+                    } else {
+                        fields.lorebook.value = '';
+                    }
+
+                    if (data.tags) {
+                        const tags = Array.isArray(data.tags) ? data.tags : [];
+                        fields.tags.value = tags.join(', ');
+                    } else {
+                        fields.tags.value = '';
+                    }
+
+                    generatedCard = data;
+                    updatePreview();
+                    showToast(`Loaded: ${data.title || 'scenario'}`, 'success');
+                } catch (err) {
+                    showToast('Failed to parse JSON file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetForm() {
+            form.reset();
+            generatedCard = null;
+            updatePreview();
+            showToast('Form reset', 'success');
+        }
+
+        function showToast(message, type) {
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        generateBtn.addEventListener('click', generateCard);
+        copyBtn.addEventListener('click', copyToClipboard);
+        downloadBtn.addEventListener('click', downloadJSON);
+        resetBtn.addEventListener('click', resetForm);
+        loadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                loadCardFromFile(e.target.files[0]);
+                fileInput.value = '';
+            }
+        });
+
+        // Auto-save draft
+        form.addEventListener('input', () => {
+            const draft = {};
+            Object.keys(fields).forEach(key => { draft[key] = fields[key].value; });
+            localStorage.setItem('scenarioCardDraft', JSON.stringify(draft));
+        });
+
+        // Load saved draft
+        const savedDraft = localStorage.getItem('scenarioCardDraft');
+        if (savedDraft) {
+            try {
+                const draft = JSON.parse(savedDraft);
+                Object.keys(draft).forEach(key => {
+                    if (fields[key]) fields[key].value = draft[key];
+                });
+            } catch (e) { console.log('No saved draft found'); }
+        }
+    </script>
+</body>
+</html>

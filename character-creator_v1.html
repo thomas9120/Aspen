@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Card Creator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #2a2a4e;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: #e94560;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2a2a4e;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .image-upload-area {
+            border: 2px dashed #2a2a4e;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            background: #0f3460;
+            cursor: pointer;
+            transition: border-color 0.3s, background 0.3s;
+            position: relative;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-upload-area:hover {
+            border-color: #e94560;
+            background: #132a4e;
+        }
+
+        .image-upload-area.has-image {
+            padding: 10px;
+        }
+
+        .image-upload-area .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        .image-upload-area .upload-text {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .image-upload-area .upload-text span {
+            color: #e94560;
+            text-decoration: underline;
+        }
+
+        .image-upload-area img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+        .image-upload-area .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(233, 69, 96, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .image-upload-area.has-image .remove-image {
+            display: flex;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #b8b8b8;
+            font-size: 0.9rem;
+        }
+
+        label span {
+            color: #e94560;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            background: #0f3460;
+            border: 1px solid #2a2a4e;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        textarea.large {
+            min-height: 200px;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #2a2a4e;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #d63851;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+        }
+
+        .btn-secondary {
+            background: #0f3460;
+            color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #1a4570;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #2a2a4e;
+            color: #e0e0e0;
+        }
+
+        .btn-outline:hover {
+            border-color: #e94560;
+            color: #e94560;
+        }
+
+        .btn-export {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #8e44ad;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+        }
+
+        .preview-sticky {
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: #0f3460;
+            border: none;
+            border-radius: 6px;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #e94560;
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: #1a4570;
+        }
+
+        .preview-content {
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            max-height: 500px;
+            overflow: auto;
+        }
+
+        .preview-content pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #a8d8ff;
+        }
+
+        .empty-state {
+            color: #666;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .toast.error {
+            background: #f44336;
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .actions-bar {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .preview-sticky {
+                position: static;
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Character Card Creator</h1>
+            <p>Create and format character cards for SillyTavern, KoboldCPP, and other LLM interfaces</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Input Section -->
+            <div class="card">
+                <h2 class="section-title">Character Information</h2>
+                <form id="characterForm">
+                    <div class="form-group">
+                        <label for="charName">Character Name <span>*</span></label>
+                        <input type="text" id="charName" placeholder="e.g., Luna the Adventurer" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charDescription">Description / Appearance</label>
+                        <textarea id="charDescription" class="large" placeholder="Describe your character's physical appearance, clothing, notable features..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charPersonality">Personality</label>
+                        <textarea id="charPersonality" placeholder="e.g., Brave, curious, sometimes reckless, fiercely loyal to friends, loves discovering new places..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charScenario">Scenario</label>
+                        <textarea id="charScenario" placeholder="The setting or situation where the character meets the user..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charFirstMessage">First Message (Greeting)</label>
+                        <textarea id="charFirstMessage" class="large" placeholder="The character's opening message to the user..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charExamples">Example Dialogue</label>
+                        <textarea id="charExamples" class="large" placeholder="<START>
+User: Hello there!
+Character: Greetings, traveler! Welcome to my shop.
+
+<START>
+User: What do you have for sale?
+Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></textarea>
+                        <div class="hint">Use &lt;START&gt; tags to separate different conversations. Format: User speaks on one line, Character responds on the next.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charNotes">Creator Notes</label>
+                        <textarea id="charNotes" placeholder="Additional notes about the character, writing style, special instructions..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charSystem">System Prompt (Optional)</label>
+                        <textarea id="charSystem" placeholder="Custom system prompt for the character..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charTags">Tags</label>
+                        <input type="text" id="charTags" placeholder="e.g., fantasy, adventure, female, warrior">
+                        <div class="hint">Separate tags with commas</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Character Image</label>
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <div class="upload-icon">&#128247;</div>
+                            <div class="upload-text">Drag & drop image or <span>browse</span></div>
+                            <button type="button" class="remove-image" id="removeImageBtn">&times;</button>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*">
+                    </div>
+
+                    <div class="actions-bar">
+                        <button type="button" class="btn-primary" id="generateBtn">Generate Card</button>
+                        <button type="button" class="btn-export" id="exportPngBtn">Export PNG Card</button>
+                        <button type="button" class="btn-secondary" id="copyBtn">Copy JSON</button>
+                        <button type="button" class="btn-secondary" id="downloadBtn">Download</button>
+                        <button type="button" class="btn-secondary" id="loadBtn">Load Card</button>
+                        <button type="button" class="btn-outline" id="resetBtn">Reset</button>
+                    </div>
+                    <input type="file" id="fileInput" accept=".json" style="display: none;">
+                </form>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-sticky">
+                <div class="card">
+                    <h2 class="section-title">Preview</h2>
+                    <div class="tabs">
+                        <button class="tab active" data-tab="json">SillyTavern JSON</button>
+                        <button class="tab" data-tab="text">Plain Text</button>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <div class="empty-state">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p>Fill in the character information and click "Generate Card" to see the preview</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <canvas id="pngCanvas" style="display: none;"></canvas>
+
+    <script>
+        // State management
+        let currentTab = 'json';
+        let generatedCard = null;
+        let characterImage = null;
+
+        // DOM Elements
+        const form = document.getElementById('characterForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const exportPngBtn = document.getElementById('exportPngBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const fileInput = document.getElementById('fileInput');
+        const previewContent = document.getElementById('previewContent');
+        const tabs = document.querySelectorAll('.tab');
+        const toast = document.getElementById('toast');
+        const pngCanvas = document.getElementById('pngCanvas');
+        const imageUploadArea = document.getElementById('imageUploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+
+        // Form fields
+        const fields = {
+            name: document.getElementById('charName'),
+            description: document.getElementById('charDescription'),
+            personality: document.getElementById('charPersonality'),
+            scenario: document.getElementById('charScenario'),
+            firstMessage: document.getElementById('charFirstMessage'),
+            examples: document.getElementById('charExamples'),
+            notes: document.getElementById('charNotes'),
+            system: document.getElementById('charSystem'),
+            tags: document.getElementById('charTags')
+        };
+
+        // Tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentTab = tab.dataset.tab;
+                updatePreview();
+            });
+        });
+
+        // Generate character card
+        function generateCard() {
+            const tags = fields.tags.value
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+
+            generatedCard = {
+                name: fields.name.value.trim(),
+                description: fields.description.value.trim(),
+                personality: fields.personality.value.trim(),
+                scenario: fields.scenario.value.trim(),
+                first_mes: fields.firstMessage.value.trim(),
+                mes_example: fields.examples.value.trim(),
+                creator_notes: fields.notes.value.trim(),
+                system_prompt: fields.system.value.trim(),
+                tags: tags,
+                spec: 'chara_card_v2',
+                spec_version: '2.0',
+                created_date: new Date().toISOString()
+            };
+
+            // Add character image as base64 if available
+            if (characterImage) {
+                generatedCard.char_image = characterImage;
+            }
+
+            // Remove empty fields
+            Object.keys(generatedCard).forEach(key => {
+                if (generatedCard[key] === '' || (Array.isArray(generatedCard[key]) && generatedCard[key].length === 0)) {
+                    delete generatedCard[key];
+                }
+            });
+
+            updatePreview();
+            showToast('Character card generated!', 'success');
+        }
+
+        // Update preview
+        function updatePreview() {
+            if (!generatedCard) {
+                previewContent.innerHTML = `
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>Fill in the character information and click "Generate Card" to see the preview</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let content = '';
+            if (currentTab === 'json') {
+                content = `<pre>${JSON.stringify(generatedCard, null, 2)}</pre>`;
+            } else {
+                // Plain text format
+                content = '<pre>';
+                if (generatedCard.name) content += `Name: ${generatedCard.name}\n\n`;
+                if (generatedCard.description) content += `Description:\n${generatedCard.description}\n\n`;
+                if (generatedCard.personality) content += `Personality:\n${generatedCard.personality}\n\n`;
+                if (generatedCard.scenario) content += `Scenario:\n${generatedCard.scenario}\n\n`;
+                if (generatedCard.first_mes) content += `First Message:\n${generatedCard.first_mes}\n\n`;
+                if (generatedCard.mes_example) content += `Example Dialogue:\n${generatedCard.mes_example}\n\n`;
+                if (generatedCard.creator_notes) content += `Creator Notes:\n${generatedCard.creator_notes}\n\n`;
+                if (generatedCard.system_prompt) content += `System Prompt:\n${generatedCard.system_prompt}\n\n`;
+                if (generatedCard.tags && generatedCard.tags.length > 0) content += `Tags: ${generatedCard.tags.join(', ')}`;
+                content += '</pre>';
+            }
+
+            previewContent.innerHTML = content;
+        }
+
+        // Copy to clipboard
+        async function copyToClipboard() {
+            if (!generatedCard) {
+                showToast('Generate a card first!', 'error');
+                return;
+            }
+
+            const content = currentTab === 'json'
+                ? JSON.stringify(generatedCard, null, 2)
+                : previewContent.textContent;
+
+            try {
+                await navigator.clipboard.writeText(content);
+                showToast('Copied to clipboard!', 'success');
+            } catch (err) {
+                showToast('Failed to copy', 'error');
+            }
+        }
+
+        // Download JSON
+        function downloadJSON() {
+            if (!generatedCard) {
+                showToast('Generate a card first!', 'error');
+                return;
+            }
+
+            const filename = `${generatedCard.name || 'character'}_card.json`;
+            const blob = new Blob([JSON.stringify(generatedCard, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Downloaded ${filename}`, 'success');
+        }
+
+        // Load character card from JSON file
+        function loadCardFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    const fieldMap = {
+                        name: 'name',
+                        description: 'description',
+                        personality: 'personality',
+                        scenario: 'scenario',
+                        first_mes: 'firstMessage',
+                        mes_example: 'examples',
+                        creator_notes: 'notes',
+                        system_prompt: 'system'
+                    };
+
+                    Object.keys(fieldMap).forEach(jsonKey => {
+                        const formKey = fieldMap[jsonKey];
+                        if (data[jsonKey] !== undefined && data[jsonKey] !== null) {
+                            fields[formKey].value = typeof data[jsonKey] === 'string' ? data[jsonKey] : JSON.stringify(data[jsonKey]);
+                        } else {
+                            fields[formKey].value = '';
+                        }
+                    });
+
+                    if (data.tags) {
+                        const tags = Array.isArray(data.tags) ? data.tags : [];
+                        fields.tags.value = tags.join(', ');
+                    } else {
+                        fields.tags.value = '';
+                    }
+
+                    // Load character image if available
+                    if (data.char_image) {
+                        characterImage = data.char_image;
+                        imageUploadArea.classList.add('has-image');
+                        const imgElement = document.createElement('img');
+                        imgElement.src = characterImage;
+                        imgElement.alt = 'Character image';
+                        imageUploadArea.innerHTML = '';
+                        imageUploadArea.appendChild(imgElement);
+                        const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.className = 'remove-image';
+                        removeBtn.id = 'removeImageBtn';
+                        removeBtn.innerHTML = '&times;';
+                        removeBtn.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            characterImage = null;
+                            imageInput.value = '';
+                            resetImageUpload();
+                        });
+                        imageUploadArea.appendChild(removeBtn);
+                    }
+
+                    generatedCard = data;
+                    updatePreview();
+                    showToast(`Loaded: ${data.name || 'character'}`, 'success');
+                } catch (err) {
+                    showToast('Failed to parse JSON file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+       // Reset form
+        function resetForm() {
+            form.reset();
+            generatedCard = null;
+            characterImage = null;
+            imageUploadArea.classList.remove('has-image');
+            imageUploadArea.innerHTML = `
+                <div class="upload-icon">&#128247;</div>
+                <div class="upload-text">Drag & drop image or <span>browse</span></div>
+                <button type="button" class="remove-image" id="removeImageBtn">&times;</button>
+            `;
+            updatePreview();
+            showToast('Form reset', 'success');
+        }
+
+        // Image upload handling
+        function handleImageUpload(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('Please select a valid image file', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('Image must be under 10MB', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                characterImage = e.target.result;
+                imageUploadArea.classList.add('has-image');
+                imageUploadArea.innerHTML = `
+                    <img src="${characterImage}" alt="Character image">
+                    <button type="button" class="remove-image" id="removeImageBtn">&times;</button>
+                `;
+                document.getElementById('removeImageBtn').addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    characterImage = null;
+                    imageInput.value = '';
+                    resetImageUpload();
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetImageUpload() {
+            imageUploadArea.classList.remove('has-image');
+            imageUploadArea.innerHTML = `
+                <div class="upload-icon">&#128247;</div>
+                <div class="upload-text">Drag & drop image or <span>browse</span></div>
+                <button type="button" class="remove-image" id="removeImageBtn">&times;</button>
+            `;
+        }
+
+        imageUploadArea.addEventListener('click', (e) => {
+            if (e.target.id !== 'removeImageBtn') {
+                imageInput.click();
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageUpload(e.target.files[0]);
+                imageInput.value = '';
+            }
+        });
+
+        imageUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            imageUploadArea.style.borderColor = '#e94560';
+            imageUploadArea.style.background = '#132a4e';
+        });
+
+        imageUploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            imageUploadArea.style.borderColor = '';
+            imageUploadArea.style.background = '';
+        });
+
+        imageUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            imageUploadArea.style.borderColor = '';
+            imageUploadArea.style.background = '';
+            if (e.dataTransfer.files.length > 0) {
+                handleImageUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Draw PNG character card
+        function drawCharacterCard() {
+            const canvas = pngCanvas;
+            const ctx = canvas.getContext('2d');
+
+            const cardWidth = 512;
+            const cardHeight = 800;
+            canvas.width = cardWidth;
+            canvas.height = cardHeight;
+
+            // Background gradient
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, cardHeight);
+            bgGrad.addColorStop(0, '#1a1a2e');
+            bgGrad.addColorStop(1, '#16213e');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, cardWidth, cardHeight);
+
+            // Border
+            ctx.strokeStyle = '#2a2a4e';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(8, 8, cardWidth - 16, cardHeight - 16);
+
+            // Red accent line at top
+            ctx.fillStyle = '#e94560';
+            ctx.fillRect(8, 8, cardWidth - 16, 3);
+
+            // Top section: Character image + name
+            const imageSectionHeight = 280;
+            const imageX = 36;
+            const imageY = 30;
+            const imageW = cardWidth - 72;
+            const imageH = 200;
+
+            // Image background
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(imageX, imageY, imageW, imageH);
+
+            // Draw character image if available
+            let imgObj = null;
+            if (characterImage) {
+                imgObj = new Image();
+                imgObj.src = characterImage;
+                // Draw image after it loads
+                imgObj.onload = function() {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(imageX, imageY, imageW, imageH);
+                    ctx.clip();
+                    ctx.drawImage(imgObj, imageX, imageY, imageW, imageH);
+                    ctx.restore();
+                    drawTextContent(ctx, cardWidth, cardHeight);
+                };
+            }
+
+            // Draw image border
+            ctx.strokeStyle = '#2a2a4e';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(imageX, imageY, imageW, imageH);
+
+            // Character name
+            const name = generatedCard.name || 'Character Name';
+            ctx.fillStyle = '#e94560';
+            ctx.font = 'bold 28px Segoe UI, sans-serif';
+            ctx.textBaseline = 'top';
+
+            // Word wrap name if needed
+            const nameY = imageY + imageH + 15;
+            const nameX = 36;
+            const nameMaxWidth = cardWidth - 72;
+            wrapText(ctx, name, nameX, nameY, nameMaxWidth, 34, '#e94560', 'bold 28px Segoe UI, sans-serif');
+
+            // Divider line
+            const dividerY = nameY + 45;
+            ctx.strokeStyle = '#2a2a4e';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(36, dividerY);
+            ctx.lineTo(cardWidth - 36, dividerY);
+            ctx.stroke();
+
+            // Store dividerY for text section
+            drawTextContent(ctx, cardWidth, cardHeight, dividerY + 10);
+
+            // If image is not loaded yet, draw without it first then overlay
+            if (!characterImage && imgObj) {
+                drawTextContent(ctx, cardWidth, cardHeight, dividerY + 10);
+            }
+        }
+
+        function drawTextContent(ctx, cardWidth, cardHeight, startY) {
+            const contentStartY = startY || 340;
+            const contentMaxX = cardWidth - 36;
+            let y = contentStartY;
+
+            const sections = [];
+
+            if (generatedCard.description) {
+                sections.push({ label: 'Appearance', text: generatedCard.description });
+            }
+            if (generatedCard.personality) {
+                sections.push({ label: 'Personality', text: generatedCard.personality });
+            }
+            if (generatedCard.scenario) {
+                sections.push({ label: 'Scenario', text: generatedCard.scenario });
+            }
+
+            for (const section of sections) {
+                // Section divider
+                ctx.strokeStyle = '#2a2a4e';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(36, y);
+                ctx.lineTo(cardWidth - 36, y);
+                ctx.stroke();
+                y += 15;
+
+                // Section label
+                ctx.fillStyle = '#e94560';
+                ctx.font = 'bold 16px Segoe UI, sans-serif';
+                ctx.textBaseline = 'top';
+                ctx.fillText(section.label, 36, y);
+                y += 22;
+
+                // Section text
+                ctx.fillStyle = '#c8d6e5';
+                ctx.font = '14px Segoe UI, sans-serif';
+                const maxWidth = cardWidth - 72;
+                y = wrapText(ctx, section.text, 36, y, maxWidth, 20, '#c8d6e5', '14px Segoe UI, sans-serif');
+                y += 20;
+
+                // Check if we're running out of space
+                if (y > cardHeight - 40) {
+                    break;
+                }
+            }
+        }
+
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight, color, font) {
+            ctx.fillStyle = color;
+            ctx.font = font;
+            const words = text.split(' ');
+            let line = '';
+
+            for (const word of words) {
+                const testLine = line + word + ' ';
+                const metrics = ctx.measureText(testLine);
+
+                if (metrics.width > maxWidth && line !== '') {
+                    ctx.fillText(line.trim(), x, y);
+                    line = word + ' ';
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+
+                // Check if we're running out of space
+                if (y > pngCanvas.height - 20) {
+                    return y;
+                }
+            }
+
+            ctx.fillText(line.trim(), x, y);
+            y += lineHeight;
+            return y;
+        }
+
+        // Export PNG
+        function exportPNG() {
+            if (!generatedCard) {
+                showToast('Generate a card first!', 'error');
+                return;
+            }
+
+            const canvas = pngCanvas;
+            const ctx = canvas.getContext('2d');
+
+            const cardWidth = 512;
+            const cardHeight = 800;
+            canvas.width = cardWidth;
+            canvas.height = cardHeight;
+
+            // Background gradient
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, cardHeight);
+            bgGrad.addColorStop(0, '#1a1a2e');
+            bgGrad.addColorStop(1, '#16213e');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, cardWidth, cardHeight);
+
+            // Border
+            ctx.strokeStyle = '#2a2a4e';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(8, 8, cardWidth - 16, cardHeight - 16);
+
+            // Red accent line at top
+            ctx.fillStyle = '#e94560';
+            ctx.fillRect(8, 8, cardWidth - 16, 3);
+
+            // Character image section
+            const imageSectionHeight = 280;
+            const imageX = 36;
+            const imageY = 30;
+            const imageW = cardWidth - 72;
+            const imageH = 200;
+
+            // Image background
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(imageX, imageY, imageW, imageH);
+
+            // Image border
+            ctx.strokeStyle = '#2a2a4e';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(imageX, imageY, imageW, imageH);
+
+            // Draw everything and then export
+            const drawAndExport = () => {
+                drawCharacterCardText(ctx);
+            };
+
+            if (characterImage) {
+                const imgObj = new Image();
+                imgObj.src = characterImage;
+
+                const onImageReady = () => {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(imageX, imageY, imageW, imageH);
+                    ctx.clip();
+                    ctx.drawImage(imgObj, imageX, imageY, imageW, imageH);
+                    ctx.restore();
+                    drawAndExport();
+                };
+
+                if (imgObj.complete && imgObj.naturalWidth > 0) {
+                    onImageReady();
+                } else {
+                    imgObj.onload = onImageReady;
+                    imgObj.onerror = onImageReady;
+                    setTimeout(() => {
+                        if (!imgObj.complete) onImageReady();
+                    }, 1000);
+                }
+            } else {
+                drawAndExport();
+            }
+        }
+
+        function drawCharacterCardText(ctx) {
+            const cardWidth = pngCanvas.width;
+            const cardHeight = pngCanvas.height;
+
+            // Character name
+            const name = generatedCard.name || 'Character Name';
+            const nameY = 300;
+
+            ctx.fillStyle = '#e94560';
+            ctx.font = 'bold 28px Segoe UI, sans-serif';
+            ctx.textBaseline = 'top';
+
+            const nameX = 36;
+            const nameMaxWidth = cardWidth - 72;
+            wrapText(ctx, name, nameX, nameY, nameMaxWidth, 34, '#e94560', 'bold 28px Segoe UI, sans-serif');
+
+            // Divider line
+            const dividerY = nameY + 55;
+            ctx.strokeStyle = '#2a2a4e';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(36, dividerY);
+            ctx.lineTo(cardWidth - 36, dividerY);
+            ctx.stroke();
+
+            // Text content
+            let y = dividerY + 15;
+
+            const sections = [];
+            if (generatedCard.description) {
+                sections.push({ label: 'Appearance', text: generatedCard.description });
+            }
+            if (generatedCard.personality) {
+                sections.push({ label: 'Personality', text: generatedCard.personality });
+            }
+            if (generatedCard.scenario) {
+                sections.push({ label: 'Scenario', text: generatedCard.scenario });
+            }
+
+            for (const section of sections) {
+                ctx.strokeStyle = '#2a2a4e';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(36, y);
+                ctx.lineTo(cardWidth - 36, y);
+                ctx.stroke();
+                y += 18;
+
+                ctx.fillStyle = '#e94560';
+                ctx.font = 'bold 16px Segoe UI, sans-serif';
+                ctx.textBaseline = 'top';
+                ctx.fillText(section.label, 36, y);
+                y += 24;
+
+                ctx.fillStyle = '#c8d6e5';
+                ctx.font = '14px Segoe UI, sans-serif';
+                const maxWidth = cardWidth - 72;
+                y = wrapText(ctx, section.text, 36, y, maxWidth, 22, '#c8d6e5', '14px Segoe UI, sans-serif');
+                y += 22;
+
+                if (y > cardHeight - 40) break;
+            }
+
+            // Footer watermark
+            ctx.fillStyle = '#2a2a4e';
+            ctx.font = '10px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Character Card Creator', cardWidth / 2, cardHeight - 18);
+            ctx.textAlign = 'start';
+
+            // Export
+            const filename = `${generatedCard.name || 'character'}_card.png`;
+            const dataUrl = pngCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = filename;
+            a.click();
+            showToast(`Exported ${filename}`, 'success');
+        }
+
+        // Show toast notification
+        function showToast(message, type) {
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+       // Event listeners
+        generateBtn.addEventListener('click', generateCard);
+        exportPngBtn.addEventListener('click', exportPNG);
+        copyBtn.addEventListener('click', copyToClipboard);
+        downloadBtn.addEventListener('click', downloadJSON);
+        resetBtn.addEventListener('click', resetForm);
+        loadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                loadCardFromFile(e.target.files[0]);
+                fileInput.value = '';
+            }
+        });
+
+        // Load saved draft from localStorage
+        const savedDraft = localStorage.getItem('characterCardDraft');
+        if (savedDraft) {
+            try {
+                const draft = JSON.parse(savedDraft);
+                Object.keys(draft).forEach(key => {
+                    if (fields[key]) {
+                        fields[key].value = draft[key];
+                    }
+                });
+            } catch (e) {
+                console.log('No saved draft found');
+            }
+        }
+
+        // Auto-save draft
+        form.addEventListener('input', () => {
+            const draft = {};
+            Object.keys(fields).forEach(key => {
+                draft[key] = fields[key].value;
+            });
+            localStorage.setItem('characterCardDraft', JSON.stringify(draft));
+        });
+    </script>
+</body>
+</html>
