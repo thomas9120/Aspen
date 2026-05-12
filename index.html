@@ -567,11 +567,12 @@ async function resolveAiAction(action) {
   }
 }
 
-function confirmAiAction() {
+async function confirmAiAction() {
   const text = aiReviewText.value.trim();
   if (!text) return;
   overlayEl.classList.remove('show');
-  resolveAiAction(text);
+  try { await resolveAiAction(text); }
+  catch (e) { appendLog('gm', `[Error resolving AI action: ${e.message}]`); setStatus('Error — see log'); }
 }
 
 async function regenerateAiAction() {
@@ -580,6 +581,7 @@ async function regenerateAiAction() {
   try {
     const prompt = buildAiPrompt();
     const action = await callLLM(prompt, 'ai');
+    state.pendingAction = action;
     aiReviewText.value = action;
   } catch (e) {
     aiReviewText.value = `[Error: ${e.message}]`;
@@ -588,15 +590,17 @@ async function regenerateAiAction() {
   }
 }
 
-function skipTurn() {
+async function skipTurn() {
   if (state.turnPhase === 'user') {
     state.turnPhase = 'ai';
-    aiTurn();
+    try { await aiTurn(); }
+    catch (e) { appendLog('gm', `[Error during AI turn: ${e.message}]`); setStatus('Error — see log'); }
   }
 }
 
 function restartGame() {
   saveSettings();
+  overlayEl.classList.remove('show');
   state.gameLog = [];
   logEl.innerHTML = '';
   state.turnPhase = 'gm';
