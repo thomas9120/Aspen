@@ -3,5 +3,6 @@
   "title": "The Sunken Spire",
   "description": "A coastal town has been plagued by strange lights beneath the waves. The old lighthouse keeper swears he saw a spire rise from the deep during the last storm, only to vanish again before dawn. Merchants are whispering of wrecks along the eastern reef, and a local scholar is offering a hefty reward for anyone brave enough to investigate.",
   "world_info": "Magic is rare and often mistrusted. The sea is unpredictable, governed by old tides that sailors claim have moods of their own. Pirates patrol the eastern routes, and the local militia is underfunded and overworked. Ruins from an older civilization dot the coastline, but most have been picked clean by scavengers.",
-  "starting_scene": "You stand on the cliffs above the harbor, salt wind biting at your cloak. Below, fishing boats bob in the gray water while gulls cry overhead. The storm is rolling in from the east, and with it comes the strange, pulsing light beneath the waves—the same light the keeper described."
+  "starting_scene": "You stand on the cliffs above the harbor, salt wind biting at your cloak. Below, fishing boats bob in the gray water while gulls cry overhead. The storm is rolling in from the east, and with it comes the strange, pulsing light beneath the waves—the same light the keeper described.",
+  "scenario_goal": "Investigate the sunken spire and uncover why the lights beneath the waves have returned before the storm seals the harbor."
 }

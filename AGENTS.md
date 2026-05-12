@@ -99,11 +99,14 @@ You are the Game Master (GM) of a tabletop RPG. You describe the world, control 
 User Player: {user_name} — {user_card_summary}
 AI Player: {ai_name} — {ai_card_summary}
 
+[SCENARIO GOAL] (optional — only included if set)
+The central tension or objective right now is: {scenario_goal}
+
 [SCENE HISTORY]
 {formatted_history}
 
 [INSTRUCTION]
-Describe the current scene and the immediate situation. End your response by setting the stage for both players to declare their next actions. Do not write actions for the players.
+Describe the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. End your response by presenting a clear dilemma, danger, or 2–3 concrete courses of action tied to the goal or situation. Ask the players directly what they do next. Do not write actions for the players.
 ```
 
 ### AI Player Prompt Template
@@ -170,7 +173,8 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
   "title": "The Sunken Spire",
   "description": "A coastal town has been plagued by strange lights beneath the waves. The old lighthouse keeper swears he saw a spire rise from the deep...",
   "world_info": "Magic is rare. The sea is unpredictable. Pirates patrol the eastern routes.",
-  "starting_scene": "You stand on the cliffs above the harbor. The storm is rolling in."
+  "starting_scene": "You stand on the cliffs above the harbor. The storm is rolling in.",
+  "scenario_goal": "Investigate the sunken spire and uncover why the lights beneath the waves have returned before the storm seals the harbor."
 }
 ```
 
@@ -209,6 +213,8 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
   - Dual-LLM toggle (reveals second API block)
   - AI Player: Auto / Manual toggle
   - Character Name inputs (User + AI)
+- **Scenario Goal**
+  - Editable textarea for the current objective / conflict. Lives in `state.scenario.scenario_goal` and is injected into GM prompts when present.
 - **Import / Export**
   - Import Character Card (file picker)
   - Import Scenario (file picker)

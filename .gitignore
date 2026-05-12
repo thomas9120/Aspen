@@ -1,0 +1,5 @@
+# Ignore all user content in asset folders, but keep sample files
+cards/*
+!cards/sample-character.json
+scenarios/*
+!scenarios/sample-scenario.json
