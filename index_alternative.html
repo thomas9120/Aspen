@@ -1384,19 +1384,24 @@ async function aiTurn() {
       aiReviewText.value = action;
       overlayEl.classList.add('show');
       setStatus('Review AI action...');
-      setBusy(false);
       return;
     }
     await resolveAiAction(action);
   } catch (e) {
     appendLog('gm', `[Error generating AI action: ${e.message}]`);
     setStatus('Error — see log');
+    state.pendingAction = null;
+    state.turnPhase = 'user';
+    inputEl.placeholder = `${state.settings.userName}, what do you do?`;
   } finally {
     if (!reviewStarted) setBusy(false);
   }
 }
 
 async function resolveAiAction(action) {
+  if (state.turnPhase !== 'ai' && state.turnPhase !== 'ai_review') return;
+  state.turnPhase = 'resolution';
+  action = action.replace(/\[Roll:.*?\]/g, '').trim();
   const rawRoll = rollD20();
   const result = applyHandicap(rawRoll, false);
   showDice(result.final);
@@ -1415,7 +1420,6 @@ async function resolveAiAction(action) {
     rollMeta
   };
   delete state.pendingAction.aiDraft;
-  state.turnPhase = 'resolution';
   setBusy(true);
   setStatus('Resolving round...');
   showTypingIndicator();
@@ -1432,6 +1436,9 @@ async function resolveAiAction(action) {
     removeTypingIndicator();
     appendLog('gm', `[Error resolving round: ${e.message}]`);
     setStatus('Error — see log');
+    state.pendingAction = null;
+    state.turnPhase = 'user';
+    inputEl.placeholder = `${state.settings.userName}, what do you do?`;
   } finally {
     setBusy(false);
   }
@@ -1442,9 +1449,9 @@ async function confirmAiAction() {
   const text = aiReviewText.value.trim();
   if (!text) return;
   overlayEl.classList.remove('show');
-  setModalBusy(false);
   try { await resolveAiAction(text); }
   catch (e) { appendLog('gm', `[Error resolving round: ${e.message}]`); setStatus('Error — see log'); }
+  finally { setModalBusy(false); }
 }
 
 async function regenerateAiAction() {
