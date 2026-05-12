@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Aspen — UI Redesign Mockup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+  :root {
+    --bg: #121215;
+    --panel: #1a1a1f;
+    --panel-raised: #222228;
+    --border: #2e2e35;
+    --border-light: #3a3a42;
+    --text: #e0e0e6;
+    --muted: #7a7a88;
+    --accent: #c9a227;
+    --accent-glow: rgba(201, 162, 39, 0.25);
+    --gm: #d4b483;
+    --gm-bg: rgba(212, 180, 131, 0.06);
+    --user: #8ecae6;
+    --user-bg: rgba(142, 202, 230, 0.06);
+    --ai: #ffb5a7;
+    --ai-bg: rgba(255, 181, 167, 0.06);
+    --danger: #e76f51;
+    --success: #2a9d8f;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+    --transition: 0.2s ease;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ========== SCROLLBAR ========== */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  * { scrollbar-width: thin; scrollbar-color: var(--border-light) transparent; }
+
+  /* ========== SIDEBAR ========== */
+  #sidebar {
+    width: 320px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 1.25rem 1rem;
+    gap: 0;
+    flex-shrink: 0;
+    box-shadow: 4px 0 16px rgba(0,0,0,0.2);
+  }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header .logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), #8b6914);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1rem; color: #1a1200;
+    box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
+  }
+  .sidebar-header h1 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .sidebar-header .version {
+    font-size: 0.65rem;
+    color: var(--muted);
+    background: var(--border);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    margin-left: auto;
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .section:last-child { border-bottom: none; }
+
+  .section h2 {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  input[type="text"], input[type="password"], input[type="number"], textarea, select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+  }
+  input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus,
+  textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  textarea { resize: vertical; min-height: 56px; font-family: inherit; }
+
+  .row { display: flex; gap: 0.5rem; align-items: center; }
+  .row > * { flex: 1; }
+
+  /* ========== BUTTONS ========== */
+  button {
+    background: linear-gradient(135deg, var(--accent), #b08d1a);
+    color: #1a1200;
+    border: none;
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.82rem;
+    transition: all var(--transition);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  button:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 2px 10px rgba(201, 162, 39, 0.35);
+    transform: translateY(-1px);
+  }
+  button:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button.secondary {
+    background: var(--panel-raised);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+  button.secondary:hover {
+    background: var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+  button.danger {
+    background: linear-gradient(135deg, var(--danger), #c44a2f);
+    color: #fff;
+  }
+  button.danger:hover {
+    box-shadow: 0 2px 10px rgba(231, 111, 81, 0.35);
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+
+  /* ========== TOGGLE SWITCH ========== */
+  .toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .toggle label { flex: 1; cursor: pointer; }
+  .switch {
+    position: relative;
+    width: 38px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .switch .slider::before {
+    content: '';
+    position: absolute;
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--text);
+    border-radius: 50%;
+    transition: transform var(--transition);
+  }
+  .switch input:checked + .slider {
+    background: var(--accent);
+  }
+  .switch input:checked + .slider::before {
+    transform: translateX(18px);
+    background: #1a1200;
+  }
+  .switch input:focus-visible + .slider {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ========== STYLED FILE INPUTS ========== */
+  .file-btn-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+  .file-btn-wrap input[type="file"] {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .file-btn-wrap button { width: 100%; text-align: left; font-weight: 500; }
+  .file-btn-wrap .file-icon {
+    margin-right: 0.4rem;
+    font-size: 0.85rem;
+  }
+
+  /* ========== MAIN AREA ========== */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* ========== TOP BAR (INTEGRATED STATUS + DICE) ========== */
+  #topBar {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1;
+  }
+  .status-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(42, 157, 143, 0.5);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 6px rgba(42, 157, 143, 0.5); }
+    50% { box-shadow: 0 0 12px rgba(42, 157, 143, 0.8); }
+  }
+  .status-dot.busy {
+    background: var(--accent);
+    box-shadow: 0 0 6px rgba(201, 162, 39, 0.5);
+    animation: pulse-dot-gold 1s ease-in-out infinite;
+  }
+  @keyframes pulse-dot-gold {
+    0%, 100% { box-shadow: 0 0 6px rgba(201, 162, 39, 0.5); }
+    50% { box-shadow: 0 0 14px rgba(201, 162, 39, 0.9); }
+  }
+  #statusText {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted);
+  }
+
+  /* ========== DICE CHIP ========== */
+  .dice-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    background: #2a2518;
+    border: 1px solid rgba(201, 162, 39, 0.2);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+  .dice-chip .die-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .dice-chip.flash {
+    animation: diceFlash 0.6s ease;
+  }
+  @keyframes diceFlash {
+    0% { transform: scale(1); background: #2a2518; }
+    30% { transform: scale(1.15); background: rgba(201, 162, 39, 0.2); box-shadow: 0 0 16px rgba(201, 162, 39, 0.4); }
+    100% { transform: scale(1); background: #2a2518; }
+  }
+  .dice-chip.crit { border-color: #ffd700; color: #ffd700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+  .dice-chip.fail { border-color: var(--danger); color: var(--danger); }
+
+  #topBar .topbar-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+  }
+  #topBar button { font-size: 0.75rem; padding: 0.3rem 0.6rem; }
+
+  /* ========== SCENE LOG ========== */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(201, 162, 39, 0.02) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(142, 202, 230, 0.015) 0%, transparent 50%),
+      var(--bg);
+  }
+
+  .entry {
+    max-width: 78%;
+    padding: 0.85rem 1.1rem;
+    border-radius: var(--radius-lg);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    position: relative;
+    animation: fadeSlideIn 0.35s ease;
+    box-shadow: var(--shadow-sm);
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .entry.gm {
+    background: linear-gradient(135deg, var(--gm-bg), rgba(212, 180, 131, 0.02));
+    color: var(--gm);
+    border-left: 3px solid var(--gm);
+    align-self: center;
+    max-width: 90%;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(212, 180, 131, 0.1);
+    border-left: 3px solid var(--gm);
+    font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
+    font-size: 1.02rem;
+    line-height: 1.6;
+  }
+
+  .entry.user {
+    background: linear-gradient(135deg, var(--user-bg), rgba(142, 202, 230, 0.02));
+    color: var(--user);
+    border-right: 3px solid var(--user);
+    align-self: flex-end;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(142, 202, 230, 0.1);
+    border-right: 3px solid var(--user);
+  }
+
+  .entry.ai {
+    background: linear-gradient(135deg, var(--ai-bg), rgba(255, 181, 167, 0.02));
+    color: var(--ai);
+    border-left: 3px solid var(--ai);
+    align-self: flex-start;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 181, 167, 0.1);
+    border-left: 3px solid var(--ai);
+  }
+
+  .entry .meta {
+    font-size: 0.68rem;
+    opacity: 0.65;
+    margin-bottom: 0.35rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .entry.gm .meta { color: var(--gm); }
+  .entry.user .meta { color: var(--user); }
+  .entry.ai .meta { color: var(--ai); }
+
+  .meta .role-icon {
+    font-size: 0.8rem;
+    line-height: 1;
+  }
+
+  .tag {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.08);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .tag.roll-high { color: var(--success); background: rgba(42, 157, 143, 0.12); }
+  .tag.roll-mid { color: var(--accent); background: rgba(201, 162, 39, 0.1); }
+  .tag.roll-low { color: var(--danger); background: rgba(231, 111, 81, 0.1); }
+  .tag.roll-crit { color: #ffd700; background: rgba(255, 215, 0, 0.12); text-shadow: 0 0 6px rgba(255, 215, 0, 0.4); }
+
+  /* ========== TYPING INDICATOR ========== */
+  .typing-indicator {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--gm-bg);
+    border: 1px solid rgba(212, 180, 131, 0.1);
+    border-radius: 20px;
+    color: var(--gm);
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+  .typing-dots {
+    display: flex;
+    gap: 3px;
+  }
+  .typing-dots span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--gm);
+    opacity: 0.4;
+    animation: typingBounce 1.4s ease-in-out infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* ========== INPUT BAR ========== */
+  #inputBar {
+    border-top: 1px solid var(--border);
+    padding: 0.85rem 1rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    background: var(--panel);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
+  }
+  #inputBar textarea {
+    flex: 1;
+    min-height: 44px;
+    max-height: 120px;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  #inputBar textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow), var(--shadow-sm);
+  }
+  .input-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  /* ========== MODAL / OVERLAY ========== */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #overlay.show {
+    display: flex;
+    opacity: 1;
+    animation: overlayIn 0.25s ease;
+  }
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    width: min(560px, 90vw);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-shadow: var(--shadow-lg);
+    animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.92) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal h3 {
+    color: var(--accent);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .modal textarea { width: 100%; }
+  .modalActions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+  /* ========== WELCOME SCREEN ========== */
+  .welcome {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+    padding: 2rem;
+    animation: fadeSlideIn 0.6s ease;
+  }
+  .welcome .welcome-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--accent), #8b6914);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+    color: #1a1200;
+    box-shadow: 0 4px 20px rgba(201, 162, 39, 0.3);
+    margin-bottom: 0.5rem;
+  }
+  .welcome h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .welcome p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    max-width: 380px;
+    line-height: 1.5;
+  }
+  .welcome .welcome-hint {
+    font-size: 0.75rem;
+    color: var(--border-light);
+    margin-top: 0.5rem;
+  }
+
+  /* ========== HAMBURGER ========== */
+  #hamburger {
+    display: none;
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 50;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 1.1rem;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 800px) {
+    body { flex-direction: column; }
+    #sidebar {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      width: 100%;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #sidebar.open { transform: translateX(0); }
+    #hamburger { display: block; }
+    .entry { max-width: 95%; }
+    .entry.gm { max-width: 98%; }
+  }
+</style>
+</head>
+<body>
+
+<button id="hamburger">&#9776;</button>
+
+<!-- ==================== SIDEBAR ==================== -->
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">A</div>
+    <h1>Project Aspen</h1>
+    <span class="version">v0.1</span>
+  </div>
+
+  <!-- Settings -->
+  <div class="section">
+    <h2>Connection</h2>
+    <label>API Preset</label>
+    <select>
+      <option value="custom">Custom</option>
+      <option value="llamacpp" selected>llama.cpp</option>
+      <option value="koboldcpp">koboldcpp</option>
+    </select>
+    <label>API URL</label>
+    <input type="text" value="http://localhost:8080/v1">
+    <label>API Key</label>
+    <input type="password" placeholder="optional">
+    <label>Model</label>
+    <input type="text" placeholder="optional">
+  </div>
+
+  <!-- Dual-LLM -->
+  <div class="section">
+    <div class="toggle">
+      <label><strong>Dual-LLM Mode</strong></label>
+      <div class="switch">
+        <input type="checkbox">
+        <span class="slider"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Review -->
+  <div class="section">
+    <div class="toggle">
+      <label><strong>Manual AI Review</strong></label>
+      <div class="switch">
+        <input type="checkbox">
+        <span class="slider"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Characters -->
+  <div class="section">
+    <h2>Characters</h2>
+    <label>User Player Name</label>
+    <input type="text" value="Arin">
+    <label>AI Player Name</label>
+    <input type="text" value="Elara">
+  </div>
+
+  <!-- Scenario Goal -->
+  <div class="section">
+    <h2>Scenario Goal</h2>
+    <textarea rows="3">Investigate the sunken spire and uncover why the lights beneath the waves have returned before the storm seals the harbor.</textarea>
+  </div>
+
+  <!-- Import / Export -->
+  <div class="section">
+    <h2>Data</h2>
+    <div class="file-btn-wrap">
+      <button class="secondary"><span class="file-icon">&#128196;</span> Import Character Card</button>
+      <input type="file" accept=".json">
+    </div>
+    <div class="file-btn-wrap">
+      <button class="secondary"><span class="file-icon">&#127918;</span> Import Scenario</button>
+      <input type="file" accept=".json">
+    </div>
+    <div class="file-btn-wrap">
+      <button class="secondary"><span class="file-icon">&#128190;</span> Import Save</button>
+      <input type="file" accept=".json">
+    </div>
+    <button>Export Save</button>
+  </div>
+
+  <!-- Game Controls -->
+  <div class="section">
+    <h2>Game</h2>
+    <button>Restart Game</button>
+    <button class="danger">Clear Output</button>
+  </div>
+</aside>
+
+<!-- ==================== MAIN ==================== -->
+<main id="main">
+  <!-- Top Bar -->
+  <div id="topBar">
+    <div class="status-section">
+      <div class="status-dot"></div>
+      <span id="statusText">Waiting for Arin...</span>
+    </div>
+    <div class="dice-chip flash crit">
+      <span class="die-icon">&#127922;</span>
+      d20 = 20
+    </div>
+    <div class="topbar-actions">
+      <button class="secondary">Restart</button>
+    </div>
+  </div>
+
+  <!-- Scene Log (showing sample game) -->
+  <div id="log">
+
+    <!-- GM Opening -->
+    <div class="entry gm">
+      <div class="meta"><span class="role-icon">&#9876;</span> Game Master</div>You stand on the cliffs above the harbor, salt spray stinging your faces. Below, the fishing boats rock violently as the storm rolls in from the open sea. The old lighthouse keeper stumbles toward you, his lantern swinging wildly.
+
+"There!" he shouts, pointing a trembling finger toward the dark water. "The lights — they've come back!"
+
+Beneath the churning waves, a faint blue glow pulses rhythmically, like a heartbeat. It's coming from the direction of the Sunken Spire — the ruin that the villagers say has been below the water for a thousand years.
+
+The lighthouse keeper grabs Arin's arm. "You have to go down there. Before the storm seals the harbor. If those lights reach the shore..."
+
+He doesn't finish. A crack of thunder drowns his words. When it fades, you both notice: the water around the glow is perfectly still, even as the rest of the sea rages.
+
+What do you do?</div>
+
+    <!-- User Action -->
+    <div class="entry user">
+      <div class="meta"><span class="role-icon">&#9876;</span> Arin</div>
+      <span class="tag roll-high">&#127922; Roll: 17</span><br><br>I stride to the cliff edge and peer down at the still water, trying to gauge how deep the light source is. I look for any path or ruins sticking above the surface that we could use as a way down.</div>
+
+    <!-- GM Resolution -->
+    <div class="entry gm">
+      <div class="meta"><span class="role-icon">&#128214;</span> Game Master</div>Arin leans over the cliff edge, the wind tearing at his cloak. His eyes trace the still circle of water — it's maybe forty feet across, perfectly calm amid the chaos.
+
+About fifteen feet down, jutting from the cliff face like a broken tooth, is a narrow stone ledge. Ancient steps, slick with spray, are carved into the rock beside it — clearly old, possibly part of the original Spire structure before the sea swallowed it. The steps descend into the still water.
+
+The light pulses below, perhaps another thirty feet beneath the surface. You can just make out the shape of something angular down there — stonework, definitely. The top of the Spire.
+
+Elara — the storm is getting worse. The lighthouse keeper is backing away toward his tower. You could follow him to shelter, or follow Arin into the deep.</div>
+
+    <!-- AI Action -->
+    <div class="entry ai">
+      <div class="meta"><span class="role-icon">&#10024;</span> Elara</div>
+      <span class="tag roll-crit">&#127922; Roll: 20 — Critical!</span><br><br>*draws her sword and mutters a curse* Well, I didn't sign up for a pleasant stroll anyway. I'm right behind you, Arin. Those steps look treacherous — let me go first. I've got better balance in a storm than you do.</div>
+
+    <!-- GM Resolution for AI -->
+    <div class="entry gm">
+      <div class="meta"><span class="role-icon">&#128214;</span> Game Master</div>Elara moves past Arin with the confidence of someone who's walked narrower edges. Her boots find purchase on the wet stone as she descends, sword held in her off hand, the other trailing along the cliff face for balance.
+
+She reaches the ledge without incident and turns to wave Arin down. From here, the still water is unnervingly close — an arm's length below the last step. The blue glow intensifies, and you both hear it now: a low hum, almost subsonic, vibrating in your chests.
+
+The steps continue down into the water. The angular shape below is unmistakable now — the tip of a spire, its surface covered in symbols that glow faintly in response to the light below.
+
+Something moves in the water. A shadow, large, circling below the Spire.
+
+What do you do?</div>
+
+    <!-- Typing indicator (shown as example) -->
+    <div class="typing-indicator">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+      Game Master is narrating...
+    </div>
+
+  </div>
+
+  <!-- Input Bar -->
+  <div id="inputBar">
+    <textarea placeholder="What do you do?" rows="1"></textarea>
+    <div class="input-actions">
+      <button>Roll d20 &amp; Send</button>
+      <button class="secondary">Skip</button>
+    </div>
+  </div>
+</main>
+
+<!-- ==================== MODAL (shown statically for mockup) ==================== -->
+<div id="overlay" class="show">
+  <div class="modal">
+    <h3><span>&#128270;</span> Review AI Action</h3>
+    <label>The AI Player intends to:</label>
+    <textarea rows="4">*draws her sword and mutters a curse* Well, I didn't sign up for a pleasant stroll anyway. I'm right behind you, Arin.</textarea>
+    <div class="modalActions">
+      <button class="secondary">Re-roll Action</button>
+      <button>Confirm Roll</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
