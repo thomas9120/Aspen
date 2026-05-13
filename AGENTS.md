@@ -197,6 +197,12 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
     "ai_api_key": "",
     "ai_model": "",
     "ai_auto_mode": true,
+    "temperature": 0.8,
+    "top_p": 0.95,
+    "min_p": 0.05,
+    "top_k": 40,
+    "repetition_penalty": 1.1,
+    "max_tokens": 1024,
     "user_name": "Arin",
     "ai_name": "Elara"
   },
@@ -217,6 +223,7 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
   - Preset dropdown: llama.cpp / koboldcpp / Custom
   - Dual-LLM toggle (reveals second API block)
   - AI Player: Auto / Manual toggle
+  - **Sampler Settings** (collapsible): Temperature, Top-P, Min-P, Top-K, Repeat Penalty, Max Tokens — each with a range slider and number input, synced bidirectionally. Parameters with a "disabled" value show a hint (e.g., "0 = off" for Min-P, "1.0 = off" for Repeat Penalty). Map directly to the API request body. Top-K is omitted from the request when set to 0.
   - Character Name inputs (User + AI)
 - **Scenario Goal**
   - Editable textarea for the current objective / conflict. Lives in `state.scenario.scenario_goal` and is injected into GM prompts when present.
@@ -252,7 +259,16 @@ All application state lives in a single JavaScript object:
 
 ```javascript
 const state = {
-  settings: { ... },
+  settings: {
+    ...,
+    temperature: 0.8,
+    topP: 0.95,
+    minP: 0.05,
+    topK: 40,
+    repeatPenalty: 1.1,
+    maxTokens: 1024,
+    ...
+  },
   scenario: null,
   userCard: null,
   aiCard: null,

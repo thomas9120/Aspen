@@ -260,6 +260,80 @@
     white-space: nowrap;
   }
 
+  .collapsible-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .collapsible-header .chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 0.6rem;
+    line-height: 1;
+  }
+  .collapsible-header.collapsed .chevron {
+    transform: rotate(-90deg);
+  }
+  .collapsible-body { display: flex; flex-direction: column; gap: 0.45rem; }
+
+  .sampler-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .sampler-row label {
+    width: 100px;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .sampler-row input[type="range"] {
+    flex: 1;
+    min-width: 0;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+  }
+  .sampler-row input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(201, 162, 39, 0.4);
+    border: none;
+  }
+  .sampler-row input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+  }
+  .sampler-row input[type="number"] {
+    width: 58px;
+    flex-shrink: 0;
+    text-align: center;
+    padding: 0.3rem 0.3rem;
+    font-size: 0.8rem;
+  }
+  .sampler-off {
+    font-size: 0.6rem;
+    color: var(--muted);
+    flex-shrink: 0;
+    width: 44px;
+    text-align: left;
+    opacity: 0.7;
+  }
+
   .file-btn-wrap {
     position: relative;
     overflow: hidden;
@@ -717,6 +791,48 @@
     </div>
   </div>
 
+  <div class="section" id="samplerSection">
+    <h2 class="collapsible-header" onclick="toggleCollapsible(this)">
+      <span class="chevron">&#9660;</span> Sampler Settings
+    </h2>
+    <div class="collapsible-body">
+      <div class="sampler-row">
+        <label>Temperature</label>
+        <input type="range" id="samplerTemp" min="0" max="2" step="0.01" value="0.8" oninput="syncSamplerNumber(this, 'samplerTempVal')">
+        <input type="number" id="samplerTempVal" min="0" max="2" step="0.01" value="0.8" oninput="syncSamplerSlider(this, 'samplerTemp')">
+      </div>
+      <div class="sampler-row">
+        <label>Top-P</label>
+        <input type="range" id="samplerTopP" min="0" max="1" step="0.01" value="0.95" oninput="syncSamplerNumber(this, 'samplerTopPVal')">
+        <input type="number" id="samplerTopPVal" min="0" max="1" step="0.01" value="0.95" oninput="syncSamplerSlider(this, 'samplerTopP')">
+        <span class="sampler-off">1.0 = off</span>
+      </div>
+      <div class="sampler-row">
+        <label>Min-P</label>
+        <input type="range" id="samplerMinP" min="0" max="1" step="0.01" value="0.05" oninput="syncSamplerNumber(this, 'samplerMinPVal')">
+        <input type="number" id="samplerMinPVal" min="0" max="1" step="0.01" value="0.05" oninput="syncSamplerSlider(this, 'samplerMinP')">
+        <span class="sampler-off">0 = off</span>
+      </div>
+      <div class="sampler-row">
+        <label>Top-K</label>
+        <input type="range" id="samplerTopK" min="0" max="200" step="1" value="40" oninput="syncSamplerNumber(this, 'samplerTopKVal')">
+        <input type="number" id="samplerTopKVal" min="0" max="200" step="1" value="40" oninput="syncSamplerSlider(this, 'samplerTopK')">
+        <span class="sampler-off">0 = off</span>
+      </div>
+      <div class="sampler-row">
+        <label>Repeat Penalty</label>
+        <input type="range" id="samplerRepPen" min="1" max="2" step="0.01" value="1.1" oninput="syncSamplerNumber(this, 'samplerRepPenVal')">
+        <input type="number" id="samplerRepPenVal" min="1" max="2" step="0.01" value="1.1" oninput="syncSamplerSlider(this, 'samplerRepPen')">
+        <span class="sampler-off">1.0 = off</span>
+      </div>
+      <div class="sampler-row">
+        <label>Max Tokens</label>
+        <input type="range" id="samplerMaxTok" min="64" max="8192" step="1" value="1024" oninput="syncSamplerNumber(this, 'samplerMaxTokVal')">
+        <input type="number" id="samplerMaxTokVal" min="64" max="8192" step="1" value="1024" oninput="syncSamplerSlider(this, 'samplerMaxTok')">
+      </div>
+    </div>
+  </div>
+
   <div class="section">
     <h2>Characters</h2>
     <label>User Player Name</label>
@@ -828,6 +944,12 @@ const state = {
     aiApiKey: '',
     aiModel: '',
     manualReview: false,
+    temperature: 0.8,
+    topP: 0.95,
+    minP: 0.05,
+    topK: 40,
+    repeatPenalty: 1.1,
+    maxTokens: 1024,
     userName: 'Arin',
     aiName: 'Elara',
     userHandicap: false,
@@ -873,6 +995,12 @@ function saveSettings() {
   state.settings.aiApiKey = $('aiApiKey').value.trim();
   state.settings.aiModel = $('aiModel').value.trim();
   state.settings.manualReview = $('manualToggle').checked;
+  state.settings.temperature = parseFloat($('samplerTemp').value);
+  state.settings.topP = parseFloat($('samplerTopP').value);
+  state.settings.minP = parseFloat($('samplerMinP').value);
+  state.settings.topK = parseInt($('samplerTopK').value);
+  state.settings.repeatPenalty = parseFloat($('samplerRepPen').value);
+  state.settings.maxTokens = parseInt($('samplerMaxTok').value);
   state.settings.userName = $('userName').value.trim() || 'User';
   state.settings.aiName = $('aiName').value.trim() || 'AI';
   state.settings.userHandicap = $('userHandicap').checked;
@@ -897,6 +1025,18 @@ function loadSettingsUI() {
   $('aiApiKey').value = settings.aiApiKey;
   $('aiModel').value = settings.aiModel;
   $('manualToggle').checked = settings.manualReview;
+  $('samplerTemp').value = settings.temperature;
+  $('samplerTempVal').value = settings.temperature;
+  $('samplerTopP').value = settings.topP;
+  $('samplerTopPVal').value = settings.topP;
+  $('samplerMinP').value = settings.minP;
+  $('samplerMinPVal').value = settings.minP;
+  $('samplerTopK').value = settings.topK;
+  $('samplerTopKVal').value = settings.topK;
+  $('samplerRepPen').value = settings.repeatPenalty;
+  $('samplerRepPenVal').value = settings.repeatPenalty;
+  $('samplerMaxTok').value = settings.maxTokens;
+  $('samplerMaxTokVal').value = settings.maxTokens;
   $('userName').value = settings.userName;
   $('aiName').value = settings.aiName;
   $('userHandicap').checked = settings.userHandicap;
@@ -960,6 +1100,29 @@ function setupSwitchControls() {
       toggle();
     });
   });
+}
+
+function toggleCollapsible(header) {
+  header.classList.toggle('collapsed');
+  const body = header.nextElementSibling;
+  if (body) body.classList.toggle('hidden');
+}
+
+function syncSamplerNumber(slider, targetId) {
+  $(targetId).value = slider.value;
+}
+
+function syncSamplerSlider(numInput, targetId) {
+  const val = parseFloat(numInput.value);
+  if (!isNaN(val)) {
+    const min = parseFloat(numInput.min);
+    const max = parseFloat(numInput.max);
+    const clamped = Math.min(max, Math.max(min, val));
+    $(targetId).value = clamped;
+    numInput.value = clamped;
+  } else {
+    numInput.value = $(targetId).value;
+  }
 }
 
 function rollD20() {
@@ -1229,9 +1392,13 @@ async function callLLM(messages, role) {
   const body = {
     model: ep.model || 'local-model',
     messages,
-    temperature: 0.8,
-    max_tokens: 512
+    temperature: state.settings.temperature,
+    top_p: state.settings.topP,
+    min_p: state.settings.minP,
+    repetition_penalty: state.settings.repeatPenalty,
+    max_tokens: state.settings.maxTokens
   };
+  if (state.settings.topK > 0) body.top_k = state.settings.topK;
   const res = await fetch(`${ep.url.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -1541,6 +1708,12 @@ function normalizeSettings(raw) {
     aiApiKey: source.aiApiKey ?? source.ai_api_key ?? DEFAULT_SETTINGS.aiApiKey,
     aiModel: source.aiModel ?? source.ai_model ?? DEFAULT_SETTINGS.aiModel,
     manualReview: source.manualReview ?? (source.ai_auto_mode === undefined ? DEFAULT_SETTINGS.manualReview : !source.ai_auto_mode),
+    temperature: source.temperature ?? DEFAULT_SETTINGS.temperature,
+    topP: source.topP ?? source.top_p ?? DEFAULT_SETTINGS.topP,
+    minP: source.minP ?? source.min_p ?? DEFAULT_SETTINGS.minP,
+    topK: source.topK ?? source.top_k ?? DEFAULT_SETTINGS.topK,
+    repeatPenalty: source.repeatPenalty ?? source.repetition_penalty ?? DEFAULT_SETTINGS.repeatPenalty,
+    maxTokens: source.maxTokens ?? source.max_tokens ?? DEFAULT_SETTINGS.maxTokens,
     userName: source.userName ?? source.user_name ?? DEFAULT_SETTINGS.userName,
     aiName: source.aiName ?? source.ai_name ?? DEFAULT_SETTINGS.aiName,
     userHandicap: source.userHandicap ?? source.user_handicap ?? DEFAULT_SETTINGS.userHandicap,
@@ -1560,6 +1733,12 @@ function serializeSettings(settings) {
     ai_api_key: settings.aiApiKey,
     ai_model: settings.aiModel,
     ai_auto_mode: !settings.manualReview,
+    temperature: settings.temperature,
+    top_p: settings.topP,
+    min_p: settings.minP,
+    top_k: settings.topK,
+    repetition_penalty: settings.repeatPenalty,
+    max_tokens: settings.maxTokens,
     user_name: settings.userName,
     ai_name: settings.aiName,
     user_handicap: settings.userHandicap,
