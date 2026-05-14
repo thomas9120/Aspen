@@ -6,26 +6,33 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 
 ## Features
 
-- Single-file RPG interface in `index_alternative.html`
+- Single-file RPG interface in `index.html`
 - OpenAI-compatible API support
 - Presets for `llama.cpp` and `koboldcpp`
 - Optional Dual-LLM mode for separate GM and AI Player endpoints
 - Character card import, including Aspen and TavernAI/SillyTavern-style JSON
 - Scenario/world import with a persistent Scenario Goal
 - Save export/import
+- Settings auto-saved to localStorage (persists across refreshes)
+- Toast notifications (non-blocking feedback for all operations)
+- Quick Start samples to try the app immediately
+- Test Connection button to verify API setup
 - Manual AI Review mode for editing or regenerating AI player actions
 - Round-based flow: GM sets the scene, user acts, AI acts, then GM resolves both actions together
+- Undo Last Round and Regenerate GM Response buttons
+- Phase indicator showing current game state
 
 ## Quick Start
 
-1. Open `index_alternative.html` in your browser.
+1. Open `index.html` in your browser.
 2. In the left sidebar, choose an API preset or enter a custom API URL.
-3. Enter a model name if your backend requires one.
-4. Import a scenario from `scenarios/`, or type a Scenario Goal manually.
-5. Import character cards from `cards/`, or use the default player names.
-6. Click **Restart Game** to have the GM begin the scene.
-7. Type your action, click **Roll d20 & Send**, then let the AI player act.
-8. The GM will resolve both player actions together and continue the scenario.
+3. Click **Test Connection** to verify your API is reachable.
+4. Enter a model name if your backend requires one.
+5. Import a scenario from `scenarios/`, use a **Quick Start** sample, or type a Scenario Goal manually.
+6. Import character cards from `cards/`, use a Quick Start sample, or use the default player names.
+7. Click **Restart Game** to have the GM begin the scene.
+8. Type your action, click **Roll d20 & Send**, then let the AI player act.
+9. The GM will resolve both player actions together and continue the scenario.
 
 ## API Setup
 
@@ -107,15 +114,14 @@ This is useful if you want more control over the AI companion's behavior.
 
 ```text
 Aspen/
-├── index_alternative.html    Current main app
-├── index_legacy.html         Older interface version
-├── character-creator_v1.html Character card helper
-├── scenario-creator.html     Scenario helper
-├── cards/                    Example/importable character cards
-├── scenarios/                Example/importable scenarios
-├── saves/                    Suggested place for exported saves
-├── docs/                     Guides and implementation notes
-└── AGENTS.md                 Architecture and development reference
+├── index.html                  Main app (open this in your browser)
+├── character-creator_v1.html   Character card helper
+├── scenario-creator.html       Scenario helper
+├── cards/                      Example/importable character cards
+├── scenarios/                  Example/importable scenarios
+├── saves/                      Suggested place for exported saves
+├── docs/                       Guides and implementation notes
+└── AGENTS.md                   Architecture and development reference
 ```
 
 ## Documentation
@@ -129,7 +135,8 @@ Aspen/
 
 - No build step is required.
 - The main app is plain HTML, CSS, and JavaScript.
-- Edit `index_alternative.html` directly.
+- Edit `index.html` directly.
+- Settings are auto-persisted to `localStorage` under the key `aspen_session`.
 - If you change prompt architecture or turn sequencing, update `AGENTS.md` and `docs/GM_logic.md`.
 - If testing API calls, make sure your local backend allows browser requests from a `file://` page or use a local static server.
 

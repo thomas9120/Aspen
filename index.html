@@ -716,6 +716,88 @@
     cursor: pointer;
   }
 
+  .toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+  }
+  .toast {
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    pointer-events: auto;
+    animation: toastIn 0.3s ease, toastOut 0.3s ease forwards;
+    animation-delay: 0s, 2.7s;
+    max-width: 340px;
+    word-wrap: break-word;
+  }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .toast.info { background: #3a7bd5; }
+  .toast.warning { background: #e6a817; color: #1a1200; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(16px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  }
+
+  .confirm-modal {
+    background: var(--panel);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    width: min(420px, 90vw);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    box-shadow: var(--shadow-lg);
+    animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .confirm-modal p { font-size: 0.9rem; line-height: 1.5; color: var(--text); }
+  .confirm-modal .modalActions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+
+  .info-badge {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+    background: var(--panel-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    line-height: 1.45;
+    margin-top: 0.25rem;
+  }
+  .info-badge strong { color: var(--text); }
+
+  .phase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    background: var(--border);
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .phase-badge.gm { background: rgba(212,180,131,0.15); color: var(--gm); }
+  .phase-badge.user { background: rgba(142,202,230,0.15); color: var(--user); }
+  .phase-badge.ai { background: rgba(255,181,167,0.15); color: var(--ai); }
+  .phase-badge.resolution { background: rgba(201,162,39,0.15); color: var(--accent); }
+
   @media (max-width: 800px) {
     body { flex-direction: column; }
     #sidebar {
@@ -759,6 +841,7 @@
     <input type="password" id="apiKey" placeholder="optional">
     <label>Model</label>
     <input type="text" id="model" placeholder="optional">
+    <button class="secondary" id="testConnBtn" onclick="testConnection()" style="margin-top:0.3rem;font-size:0.75rem;padding:0.35rem 0.6rem;">Test Connection</button>
   </div>
 
   <div class="section">
@@ -847,6 +930,7 @@
         <input type="number" id="userModifier" value="-3" min="-19" max="-1">
       </div>
     </div>
+    <div id="userCardSummary"></div>
     <label>AI Player Name</label>
     <div class="char-row">
       <input type="text" id="aiName" value="Elara">
@@ -859,11 +943,18 @@
         <input type="number" id="aiModifier" value="-3" min="-19" max="-1">
       </div>
     </div>
+    <div id="aiCardSummary"></div>
   </div>
 
   <div class="section">
     <h2>Scenario Goal</h2>
     <textarea id="scenarioGoal" rows="3" placeholder="e.g., Escape the burning tavern before the ceiling collapses..."></textarea>
+    <div id="scenarioSummary"></div>
+  </div>
+
+  <div class="section">
+    <h2>Quick Start</h2>
+    <div id="quickStartSamples" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
   </div>
 
   <div class="section">
@@ -886,6 +977,10 @@
   <div class="section">
     <h2>Game</h2>
     <button onclick="restartGame()">Restart Game</button>
+    <div class="row">
+      <button class="secondary" onclick="undoLastRound()">Undo Round</button>
+      <button class="secondary" onclick="regenerateGmResponse()">Re-roll GM</button>
+    </div>
     <button class="danger" onclick="clearOutput()">Clear Output</button>
   </div>
 </aside>
@@ -895,6 +990,7 @@
     <div class="status-section">
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">Ready — configure settings and press Restart Game to begin</span>
+      <span class="phase-badge" id="phaseBadge">Idle</span>
     </div>
     <div class="dice-chip" id="diceChip">
       <span class="die-icon">&#127922;</span>
@@ -933,6 +1029,18 @@
   </div>
 </div>
 
+<div id="confirmOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:150;">
+  <div class="confirm-modal">
+    <p id="confirmText"></p>
+    <div class="modalActions">
+      <button class="secondary" id="confirmCancelBtn">Cancel</button>
+      <button id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
 <script>
 const state = {
   settings: {
@@ -968,6 +1076,33 @@ const state = {
 
 const DEFAULT_SETTINGS = { ...state.settings };
 
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => { toast.remove(); }, 3000);
+}
+
+function showConfirm(message) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('confirmOverlay');
+    const text = document.getElementById('confirmText');
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    text.textContent = message;
+    overlay.classList.remove('hidden');
+    const cleanup = () => {
+      overlay.classList.add('hidden');
+      okBtn.replaceWith(okBtn.cloneNode(true));
+      cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+    };
+    document.getElementById('confirmOkBtn').addEventListener('click', () => { cleanup(); resolve(true); });
+    document.getElementById('confirmCancelBtn').addEventListener('click', () => { cleanup(); resolve(false); });
+  });
+}
+
 const $ = id => document.getElementById(id);
 const logEl = $('log');
 const diceChipEl = $('diceChip');
@@ -984,6 +1119,15 @@ function removeWelcome() {
   if (welcomeEl) {
     welcomeEl.remove();
   }
+}
+
+function showWelcome() {
+  if (document.getElementById('welcome')) return;
+  const div = document.createElement('div');
+  div.className = 'welcome';
+  div.id = 'welcome';
+  div.innerHTML = '<div class="welcome-icon">A</div><h2>Project Aspen</h2><p>AI-powered tabletop RPG engine. Configure your API endpoint in the sidebar, then press Restart Game to begin your adventure.</p><span class="welcome-hint">Supports llama.cpp, koboldcpp, and any OpenAI-compatible API</span>';
+  logEl.appendChild(div);
 }
 
 function saveSettings() {
@@ -1012,6 +1156,7 @@ function saveSettings() {
     if (!state.scenario) state.scenario = {};
     state.scenario.scenario_goal = goal;
   }
+  persistSettings();
 }
 
 function loadSettingsUI() {
@@ -1046,6 +1191,107 @@ function loadSettingsUI() {
   goalEl.value = state.scenario?.scenario_goal || '';
   toggleDual();
   syncSwitchAria();
+}
+
+function persistSettings() {
+  try {
+    const toSave = {
+      settings: state.settings,
+      scenario: state.scenario,
+      userCard: state.userCard,
+      aiCard: state.aiCard
+    };
+    localStorage.setItem('aspen_session', JSON.stringify(toSave));
+  } catch (e) {
+    showToast('Settings could not be saved (storage full or private mode).', 'warning');
+  }
+}
+
+function restoreSettings() {
+  try {
+    const raw = localStorage.getItem('aspen_session');
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    if (saved.settings) {
+      state.settings = normalizeSettings(saved.settings);
+    }
+    if (saved.scenario) {
+      state.scenario = saved.scenario;
+    }
+    if (saved.userCard) {
+      state.userCard = saved.userCard;
+    }
+    if (saved.aiCard) {
+      state.aiCard = saved.aiCard;
+    }
+    return true;
+  } catch (e) { return false; }
+}
+
+async function testConnection() {
+  saveSettings();
+  const url = state.settings.apiUrl;
+  if (!url) {
+    showToast('Enter an API URL first.', 'warning');
+    return;
+  }
+  const btn = $('testConnBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Testing...'; }
+  try {
+    const res = await fetch(`${url.replace(/\/$/, '')}/models`, {
+      headers: state.settings.apiKey ? { 'Authorization': `Bearer ${state.settings.apiKey}` } : {}
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const count = data.data?.length ?? 'unknown';
+      showToast(`Connected! Found ${count} model(s).`, 'success');
+    } else {
+      showToast(`Connection failed: HTTP ${res.status}`, 'error');
+    }
+  } catch (e) {
+    showToast(`Connection failed: ${e.message}`, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Test Connection'; }
+  }
+}
+
+function showCardSummary(card, target) {
+  const containerId = target === 'ai' ? 'aiCardSummary' : 'userCardSummary';
+  const container = $(containerId);
+  if (!container) return;
+  const parts = [];
+  if (card.summary) parts.push(escapeHtml(card.summary));
+  if (card.personality) parts.push(`<strong>Personality:</strong> ${escapeHtml(card.personality)}`);
+  container.innerHTML = parts.length
+    ? `<div class="info-badge"><strong>${escapeHtml(card.name)}</strong><br>${parts.join('<br>')}</div>`
+    : '';
+}
+
+function showScenarioSummary(scenario) {
+  const container = $('scenarioSummary');
+  if (!container) return;
+  const parts = [];
+  if (scenario.title) parts.push(`<strong>${escapeHtml(scenario.title)}</strong>`);
+  if (scenario.description) parts.push(escapeHtml(scenario.description.substring(0, 120) + (scenario.description.length > 120 ? '...' : '')));
+  container.innerHTML = parts.length
+    ? `<div class="info-badge">${parts.join('<br>')}</div>`
+    : '';
+}
+
+function updatePhaseBadge() {
+  const badge = $('phaseBadge');
+  if (!badge) return;
+  const phases = {
+    idle: { label: 'Idle', cls: '' },
+    gm: { label: 'GM Narrating', cls: 'gm' },
+    user: { label: 'Your Turn', cls: 'user' },
+    ai: { label: 'AI Deciding', cls: 'ai' },
+    ai_review: { label: 'Review AI', cls: 'ai' },
+    resolution: { label: 'Resolving', cls: 'resolution' }
+  };
+  const p = phases[state.turnPhase] || phases.idle;
+  badge.textContent = p.label;
+  badge.className = `phase-badge ${p.cls}`;
 }
 
 function applyPreset() {
@@ -1192,9 +1438,9 @@ function escapeHtml(s) {
 
 const editingState = { index: null };
 
-function startEditEntry(index) {
+async function startEditEntry(index) {
   if (editingState.index !== null) {
-    alert('Another entry is currently being edited. Save or cancel that edit first.');
+    showToast('Another entry is currently being edited. Save or cancel that edit first.', 'warning');
     return;
   }
   if (index < 0 || index >= state.gameLog.length) return;
@@ -1202,7 +1448,7 @@ function startEditEntry(index) {
   if (entry.role !== 'gm') return;
 
   if (index < state.gameLog.length - 1) {
-    const proceed = confirm('This GM entry has subsequent actions after it. Editing may cause story inconsistencies. Continue?');
+    const proceed = await showConfirm('This GM entry has subsequent actions after it. Editing may cause story inconsistencies. Continue?');
     if (!proceed) return;
   }
 
@@ -1263,7 +1509,7 @@ function saveEditEntry(index) {
 
   const newText = textSpan ? textSpan.textContent.trim() : '';
   if (!newText) {
-    alert('GM response cannot be empty.');
+    showToast('GM response cannot be empty.', 'warning');
     return;
   }
 
@@ -1476,8 +1722,9 @@ function buildAiPrompt() {
 
 async function gmNarrative() {
   saveSettings();
-  if (!state.settings.apiUrl) { alert('Please configure the API URL in Settings.'); return; }
+  if (!state.settings.apiUrl) { showToast('Please configure the API URL in Settings.', 'warning'); return; }
   state.turnPhase = 'gm';
+  updatePhaseBadge();
   setBusy(true);
   setStatus('Game Master is narrating...');
   showTypingIndicator();
@@ -1487,6 +1734,7 @@ async function gmNarrative() {
     removeTypingIndicator();
     appendLog('gm', text);
     state.turnPhase = 'user';
+    updatePhaseBadge();
     inputEl.placeholder = `${state.settings.userName}, what do you do?`;
     setStatus(`Waiting for ${state.settings.userName}...`);
   } catch (e) {
@@ -1521,6 +1769,7 @@ async function sendUserAction() {
     ai: null
   };
   state.turnPhase = 'ai';
+  updatePhaseBadge();
   try {
     await aiTurn();
   } catch (e) {
@@ -1548,6 +1797,7 @@ async function aiTurn() {
     if (state.settings.manualReview) {
       reviewStarted = true;
       state.turnPhase = 'ai_review';
+      updatePhaseBadge();
       aiReviewText.value = action;
       overlayEl.classList.add('show');
       setStatus('Review AI action...');
@@ -1559,6 +1809,7 @@ async function aiTurn() {
     setStatus('Error — see log');
     state.pendingAction = null;
     state.turnPhase = 'user';
+    updatePhaseBadge();
     inputEl.placeholder = `${state.settings.userName}, what do you do?`;
   } finally {
     if (!reviewStarted) setBusy(false);
@@ -1568,6 +1819,7 @@ async function aiTurn() {
 async function resolveAiAction(action) {
   if (state.turnPhase !== 'ai' && state.turnPhase !== 'ai_review') return;
   state.turnPhase = 'resolution';
+  updatePhaseBadge();
   action = action.replace(/\[Roll:.*?\]/g, '').trim();
   const rawRoll = rollD20();
   const result = applyHandicap(rawRoll, false);
@@ -1597,6 +1849,7 @@ async function resolveAiAction(action) {
     appendLog('gm', outcome);
     state.pendingAction = null;
     state.turnPhase = 'user';
+    updatePhaseBadge();
     inputEl.placeholder = `${state.settings.userName}, what do you do?`;
     setStatus(`Waiting for ${state.settings.userName}...`);
   } catch (e) {
@@ -1605,6 +1858,7 @@ async function resolveAiAction(action) {
     setStatus('Error — see log');
     state.pendingAction = null;
     state.turnPhase = 'user';
+    updatePhaseBadge();
     inputEl.placeholder = `${state.settings.userName}, what do you do?`;
   } finally {
     setBusy(false);
@@ -1615,6 +1869,7 @@ async function confirmAiAction() {
   if (aiReviewText.disabled) return;
   const text = aiReviewText.value.trim();
   if (!text) return;
+  setModalBusy(true);
   overlayEl.classList.remove('show');
   try { await resolveAiAction(text); }
   catch (e) { appendLog('gm', `[Error resolving round: ${e.message}]`); setStatus('Error — see log'); }
@@ -1653,6 +1908,7 @@ async function skipTurn() {
       ai: null
     };
     state.turnPhase = 'ai';
+    updatePhaseBadge();
     try { await aiTurn(); }
     catch (e) { appendLog('gm', `[Error during AI turn: ${e.message}]`); setStatus('Error — see log'); }
   }
@@ -1665,6 +1921,7 @@ function restartGame() {
   state.gameLog = [];
   logEl.innerHTML = '';
   state.turnPhase = 'gm';
+  updatePhaseBadge();
   state.pendingAction = null;
   state.lastRoll = null;
   diceValueEl.textContent = 'd20 = —';
@@ -1677,11 +1934,13 @@ function clearOutput() {
   state.gameLog = [];
   logEl.innerHTML = '';
   state.turnPhase = 'idle';
+  updatePhaseBadge();
   state.pendingAction = null;
   state.lastRoll = null;
   diceValueEl.textContent = 'd20 = —';
   diceChipEl.className = 'dice-chip';
   setStatus('Output cleared. Press Restart Game to begin a new session.');
+  showWelcome();
 }
 
 function readJsonFile(input, callback) {
@@ -1690,7 +1949,7 @@ function readJsonFile(input, callback) {
   const reader = new FileReader();
   reader.onload = e => {
     try { callback(JSON.parse(e.target.result)); }
-    catch (err) { alert('Invalid JSON file.'); }
+    catch (err) { showToast('Invalid JSON file.', 'error'); }
   };
   reader.readAsText(file);
   input.value = '';
@@ -1749,13 +2008,14 @@ function serializeSettings(settings) {
 }
 
 function importCard(input) {
-  readJsonFile(input, data => {
+  readJsonFile(input, async data => {
     const card = normalizeCharacterCard(data);
-    if (!card) { alert('Unrecognized character card format.'); return; }
-    const target = confirm(`Import "${card.name}" as the AI Player?\n(Cancel = User Player)`);
+    if (!card) { showToast('Unrecognized character card format.', 'error'); return; }
+    const target = await showConfirm(`Import "${card.name}" as the AI Player?\n(Cancel = User Player)`);
     if (target) { state.aiCard = card; $('aiName').value = card.name; }
     else { state.userCard = card; $('userName').value = card.name; }
-    alert(`Imported ${card.name}.`);
+    showToast(`Imported ${card.name}.`, 'success');
+    showCardSummary(card, target ? 'ai' : 'user');
   });
 }
 
@@ -1773,16 +2033,17 @@ function importScenario(input) {
         scenario_goal: data.scenario_goal || ''
       };
     } else {
-      alert('Unrecognized scenario format.'); return;
+      showToast('Unrecognized scenario format.', 'error'); return;
     }
     goalEl.value = state.scenario.scenario_goal || '';
-    alert(`Imported scenario: ${state.scenario.title}`);
+    showToast(`Imported scenario: ${state.scenario.title}`, 'success');
+    showScenarioSummary(state.scenario);
   });
 }
 
 function importSave(input) {
   readJsonFile(input, data => {
-    if (data.format !== 'aspen-save-v1') { alert('Unrecognized save format.'); return; }
+    if (data.format !== 'aspen-save-v1') { showToast('Unrecognized save format.', 'error'); return; }
     state.settings = normalizeSettings(data.settings);
     state.scenario = data.scenario || null;
     state.userCard = data.user_card || null;
@@ -1790,7 +2051,10 @@ function importSave(input) {
     state.gameLog = data.game_log || [];
     loadSettingsUI();
     renderLog();
-    alert('Save loaded.');
+    showToast('Save loaded.', 'success');
+    if (state.userCard) showCardSummary(state.userCard, 'user');
+    if (state.aiCard) showCardSummary(state.aiCard, 'ai');
+    if (state.scenario) showScenarioSummary(state.scenario);
   });
 }
 
@@ -1857,8 +2121,150 @@ function renderLog() {
   });
 }
 
+function undoLastRound() {
+  if (state.gameLog.length === 0) {
+    showToast('Nothing to undo.', 'warning');
+    return;
+  }
+  const log = state.gameLog;
+  let removeCount = 0;
+  if (log.length >= 3 && log[log.length - 1].role === 'gm' && log[log.length - 2].role === 'ai' && log[log.length - 3].role === 'user') {
+    removeCount = 3;
+  } else if (log.length >= 2 && log[log.length - 1].role === 'gm' && log[log.length - 2].role === 'user') {
+    removeCount = 2;
+  } else if (log.length >= 1) {
+    removeCount = 1;
+  }
+  if (removeCount === 0) {
+    showToast('Cannot determine round boundary.', 'warning');
+    return;
+  }
+  log.splice(-removeCount, removeCount);
+  state.pendingAction = null;
+  state.turnPhase = log.length === 0 ? 'idle' : 'user';
+  renderLog();
+  updatePhaseBadge();
+  if (log.length === 0) {
+    inputEl.placeholder = 'What do you do?';
+    setStatus('Log is empty. Press Restart Game to begin a new session.');
+    showWelcome();
+  } else {
+    inputEl.placeholder = `${state.settings.userName}, what do you do?`;
+    setStatus(`Undid last round. Waiting for ${state.settings.userName}...`);
+  }
+  showToast(`Undid ${removeCount} message(s).`, 'success');
+}
+
+async function regenerateGmResponse() {
+  if (state.gameLog.length === 0) return;
+  if (state.turnPhase !== 'user' && state.turnPhase !== 'idle') {
+    showToast('Can only regenerate GM response during your turn or when idle.', 'warning');
+    return;
+  }
+  const lastIdx = state.gameLog.length - 1;
+  if (state.gameLog[lastIdx].role !== 'gm') {
+    showToast('Last entry is not a GM response.', 'warning');
+    return;
+  }
+  saveSettings();
+  setBusy(true);
+  setStatus('Regenerating GM response...');
+  showTypingIndicator();
+  try {
+    state.gameLog.pop();
+    const prompt = buildGmNarrativePrompt();
+    const text = await callLLM(prompt, 'gm');
+    removeTypingIndicator();
+    appendLog('gm', text);
+    setStatus(`Waiting for ${state.settings.userName}...`);
+    showToast('GM response regenerated.', 'success');
+  } catch (e) {
+    removeTypingIndicator();
+    appendLog('gm', `[Error regenerating: ${e.message}]`);
+    setStatus('Error — see log');
+  } finally {
+    setBusy(false);
+  }
+}
+
+function setupAutoResize(textarea) {
+  if (!textarea) return;
+  const resize = () => {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  };
+  textarea.addEventListener('input', resize);
+  resize();
+}
+
+function loadQuickStartSamples() {
+  const container = $('quickStartSamples');
+  if (!container) return;
+  const samples = [
+    { label: 'The Sunken Spire', type: 'scenario', target: null, data: {
+      format: 'aspen-scenario-v1',
+      title: 'The Sunken Spire',
+      description: 'A coastal town has been plagued by strange lights beneath the waves. The old lighthouse keeper swears he saw a spire rise from the deep during the last storm, only to vanish again before dawn.',
+      world_info: 'Magic is rare and often mistrusted. The sea is unpredictable. Pirates patrol the eastern routes.',
+      starting_scene: 'You stand on the cliffs above the harbor, salt wind biting at your cloak. The storm is rolling in from the east, and with it comes the strange, pulsing light beneath the waves.',
+      scenario_goal: 'Investigate the sunken spire and uncover why the lights beneath the waves have returned before the storm seals the harbor.'
+    }},
+    { label: 'Elara Moonwhisper', type: 'card', target: 'ai', data: {
+      format: 'aspen-character-v1',
+      name: 'Elara Moonwhisper',
+      summary: 'A sharp-tongued elven rogue with a knack for getting into trouble and an even better knack for getting out of it.',
+      personality: 'Cynical, fiercely loyal to friends, hates authority, sarcastic humor.',
+      first_message: '*adjusts her quiver* Keep up, or you\'ll get left behind.',
+      example_dialogue: [
+        '{{user}}: Who are you?',
+        '{{char}}: Someone who\'d rather not be here. But since I am... let\'s get paid.'
+      ]
+    }}
+  ];
+  samples.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'secondary';
+    btn.style.cssText = 'font-size:0.72rem;padding:0.3rem 0.5rem;text-align:left;';
+    btn.textContent = s.label;
+    btn.onclick = () => {
+      if (s.type === 'scenario') {
+        state.scenario = s.data;
+        goalEl.value = s.data.scenario_goal || '';
+        showScenarioSummary(s.data);
+        showToast(`Loaded scenario: ${s.data.title}`, 'success');
+      } else {
+        const target = s.target || 'user';
+        if (target === 'ai') { state.aiCard = s.data; $('aiName').value = s.data.name; }
+        else { state.userCard = s.data; $('userName').value = s.data.name; }
+        showCardSummary(s.data, target);
+        showToast(`Loaded character: ${s.data.name}`, 'success');
+      }
+    };
+    container.appendChild(btn);
+  });
+}
+
+setupAutoResize(inputEl);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (overlayEl.classList.contains('show')) {
+      overlayEl.classList.remove('show');
+      setBusy(false);
+      state.turnPhase = 'user';
+      updatePhaseBadge();
+    }
+  }
+});
+
 setupSwitchControls();
+restoreSettings();
 loadSettingsUI();
+loadQuickStartSamples();
+if (state.userCard) showCardSummary(state.userCard, 'user');
+if (state.aiCard) showCardSummary(state.aiCard, 'ai');
+if (state.scenario) showScenarioSummary(state.scenario);
+updatePhaseBadge();
 </script>
 </body>
 </html>
