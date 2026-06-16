@@ -61,6 +61,23 @@
     gap: 0;
     flex-shrink: 0;
     box-shadow: 4px 0 16px rgba(0,0,0,0.2);
+    transition: width 0.25s ease, padding 0.25s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #sidebar.collapsed {
+    width: 58px;
+    padding: 1.25rem 0.55rem;
+    overflow: hidden;
+  }
+  #sidebar.collapsed .section,
+  #sidebar.collapsed .sidebar-header h1,
+  #sidebar.collapsed .sidebar-header .version {
+    display: none;
+  }
+  #sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 0;
   }
 
   .sidebar-header {
@@ -94,6 +111,32 @@
     border-radius: 3px;
     margin-left: auto;
     flex-shrink: 0;
+  }
+  .sidebar-collapse-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 6px;
+    background: var(--panel-raised);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    box-shadow: none;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+  .sidebar-collapse-btn:hover {
+    color: var(--text);
+    background: var(--border);
+    filter: none;
+    transform: none;
+    box-shadow: none;
+  }
+  #sidebar.collapsed .sidebar-collapse-btn {
+    position: fixed;
+    top: 3.9rem;
+    left: 0.9rem;
+    z-index: 3;
   }
 
   .section {
@@ -1065,11 +1108,32 @@
       inset: 0;
       z-index: 40;
       width: 100%;
+      padding: 1.25rem 1rem;
+      overflow-y: auto;
       transform: translateX(-100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #sidebar.collapsed {
+      width: 100%;
+      padding: 1.25rem 1rem;
+      overflow-y: auto;
+    }
+    #sidebar.collapsed .section,
+    #sidebar.collapsed .sidebar-header h1,
+    #sidebar.collapsed .sidebar-header .version {
+      display: flex;
+    }
+    #sidebar.collapsed .sidebar-header {
+      justify-content: flex-start;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    #sidebar.collapsed .sidebar-collapse-btn {
+      position: static;
     }
     #sidebar.open { transform: translateX(0); }
     #hamburger { display: block; }
+    .sidebar-collapse-btn { display: none; }
     .entry { max-width: 95%; }
     .entry.gm { max-width: 98%; }
     .entry .edit-btn { opacity: 1; }
@@ -1097,6 +1161,7 @@
     <div class="logo">A</div>
     <h1>Project Aspen</h1>
     <span class="version">v0.1</span>
+    <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Collapse settings panel" aria-label="Collapse settings panel" aria-expanded="true">&#10094;</button>
   </div>
 
   <div class="section">
@@ -1383,6 +1448,7 @@ const state = {
   sessionNotes: '',
   logDensity: 'story',
   logSearch: '',
+  sidebarCollapsed: false,
   rollHistory: []
 };
 
@@ -1431,6 +1497,8 @@ const rollHistoryEl = $('rollHistory');
 const pendingRoundEl = $('pendingRound');
 const userPresenceEl = $('userPresence');
 const aiPresenceEl = $('aiPresence');
+const sidebarEl = $('sidebar');
+const sidebarCollapseBtn = $('sidebarCollapseBtn');
 const welcomeEl = $('welcome');
 
 function removeWelcome() {
@@ -1521,7 +1589,8 @@ function persistSettings() {
       userCard: state.userCard,
       aiCard: state.aiCard,
       sessionNotes: state.sessionNotes,
-      logDensity: state.logDensity
+      logDensity: state.logDensity,
+      sidebarCollapsed: state.sidebarCollapsed
     };
     localStorage.setItem('aspen_session', JSON.stringify(toSave));
   } catch (e) {
@@ -1548,6 +1617,7 @@ function restoreSettings() {
     }
     state.sessionNotes = saved.sessionNotes || '';
     state.logDensity = saved.logDensity === 'compact' ? 'compact' : 'story';
+    state.sidebarCollapsed = saved.sidebarCollapsed === true;
     return true;
   } catch (e) { return false; }
 }
@@ -1761,6 +1831,7 @@ function updateAllUi() {
   updateCharacterPresence();
   updateSetupChecklist();
   applyLogDensity();
+  applySidebarCollapse();
   applyLogFilter();
   updateRollHistory();
 }
@@ -1799,6 +1870,23 @@ function toggleDual() {
 
 function toggleSidebar() {
   $('sidebar').classList.toggle('open');
+}
+
+function applySidebarCollapse() {
+  if (!sidebarEl) return;
+  sidebarEl.classList.toggle('collapsed', state.sidebarCollapsed);
+  if (!sidebarCollapseBtn) return;
+  const label = state.sidebarCollapsed ? 'Expand settings panel' : 'Collapse settings panel';
+  sidebarCollapseBtn.innerHTML = state.sidebarCollapsed ? '&#10095;' : '&#10094;';
+  sidebarCollapseBtn.title = label;
+  sidebarCollapseBtn.setAttribute('aria-label', label);
+  sidebarCollapseBtn.setAttribute('aria-expanded', state.sidebarCollapsed ? 'false' : 'true');
+}
+
+function toggleSidebarCollapse() {
+  state.sidebarCollapsed = !state.sidebarCollapsed;
+  applySidebarCollapse();
+  persistSettings();
 }
 
 function syncSwitchAria() {
