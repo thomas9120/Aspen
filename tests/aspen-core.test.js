@@ -63,6 +63,15 @@ test('dice rolls are random first, then handicaps adjust and clamp the final val
     raw: 15,
     mod: -19
   });
+
+  context.state.settings.userHandicap = true;
+  context.state.settings.userModifier = 19;
+  assert.deepEqual(plain(context.applyHandicap(15, true)), {
+    final: 20,
+    modified: true,
+    raw: 15,
+    mod: 19
+  });
 });
 
 test('settings normalize from old save keys and serialize back to save schema', () => {

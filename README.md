@@ -25,7 +25,7 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 - Character presence cards and pending round summary
 - Story search, Story/Compact density toggle, and recent roll history
 - Action starter chips for common tabletop actions
-- Optional d20 handicap modifiers for the user and AI player
+- Optional d20 modifiers from `-19` to `+19` for the user and AI player
 - Undo Round and Re-roll GM controls
 
 ## Quick Start
