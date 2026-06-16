@@ -109,7 +109,7 @@ The central tension or objective right now is: {scenario_goal}
 {formatted_history}
 
 [INSTRUCTION]
-Describe what has changed since the last turn and frame the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. Move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice. Do not write actions for the players.
+Describe what has changed since the last turn and frame the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. Move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice. Do not write actions or dialogue for the player characters. Do not write dialogue for user characters.
 ```
 
 ### AI Player Prompt Template
@@ -143,7 +143,7 @@ You are the Game Master. Resolve the current round based on the scene history, b
 {ai_roll_or_no_roll}
 
 [INSTRUCTION]
-Narrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions for the player characters beyond resolving what they already declared.
+Narrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions or dialogue for the player characters beyond resolving what they already declared. Do not write dialogue for user characters.
 ```
 
 ---

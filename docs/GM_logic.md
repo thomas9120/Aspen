@@ -96,7 +96,8 @@ The GM should:
 - Keep the Scenario Goal alive when present.
 - Match the current tone.
 - Offer a clear next opening for player choice.
-- Never write actions for player characters.
+- Never write actions or dialogue for player characters.
+- Do not write dialogue for user characters.
 
 ### AI Player Prompt
 
@@ -121,7 +122,8 @@ The GM should:
 - Move the scenario forward by one meaningful beat.
 - Keep calm scenes calm and dramatic scenes dramatic.
 - End with a clear next opening for player choice.
-- Not invent new player-character actions beyond the declarations already made.
+- Not invent new player-character actions or dialogue beyond the declarations already made.
+- Not write dialogue for user characters.
 
 ---
 
