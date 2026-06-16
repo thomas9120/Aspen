@@ -1,8 +1,8 @@
-# Project Aspen — Agent Documentation
+# Aspen — Agent Documentation
 
 ## Overview
 
-Project Aspen is a lightweight, single-file web interface for running AI-driven RPG scenarios. It connects to any OpenAI API-compatible endpoint (with out-of-the-box presets for llama.cpp and koboldcpp) and orchestrates a turn-based game between a human user, an AI player, and a Game Master (GM).
+Aspen is a lightweight, single-file web interface for running AI-driven RPG scenarios. It connects to any OpenAI API-compatible endpoint (with out-of-the-box presets for llama.cpp and koboldcpp) and orchestrates a turn-based game between a human user, an AI player, and a Game Master (GM).
 
 The interface is intentionally minimal and portable. The entire UI lives in `index.html` with zero build steps and no external dependencies. Users open the file in a browser, configure their API endpoint, import character cards and scenarios, and play.
 
@@ -11,7 +11,7 @@ The interface is intentionally minimal and portable. The entire UI lives in `ind
 ## File Structure
 
 ```
-Project-Aspen/
+Aspen/
 ├── index.html          (The entire application: HTML, CSS, JS)
 ├── AGENTS.md           (This file — architecture and dev reference)
 ├── cards/              (Character card JSONs for import)

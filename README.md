@@ -1,6 +1,6 @@
-# Project Aspen
+# Aspen
 
-Project Aspen is a lightweight browser interface for running AI-driven tabletop RPG scenarios with a human player, an AI player, and an AI Game Master.
+Aspen is a lightweight browser interface for running AI-driven tabletop RPG scenarios with a human player, an AI player, and an AI Game Master.
 
 Aspen is designed to be portable: open the HTML file in a browser, point it at any OpenAI-compatible API endpoint, import character/scenario JSON files, and play.
 
