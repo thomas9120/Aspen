@@ -236,6 +236,12 @@
 
   .hidden { display: none !important; }
 
+  .tiny-btn {
+    padding: 0.28rem 0.5rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+  }
+
   .char-row {
     display: flex;
     gap: 0.4rem;
@@ -423,6 +429,176 @@
   .topbar-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
   #topBar button { font-size: 0.75rem; padding: 0.3rem 0.6rem; }
 
+  #playHud {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.65rem 1rem;
+    background: rgba(26, 26, 31, 0.96);
+    border-bottom: 1px solid var(--border);
+  }
+  .turn-tracker {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+  .turn-step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 28px;
+    padding: 0.25rem 0.45rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .turn-step.active {
+    border-color: rgba(201, 162, 39, 0.55);
+    color: var(--accent);
+    background: rgba(201, 162, 39, 0.1);
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.08);
+  }
+  .turn-step.done {
+    color: var(--success);
+    border-color: rgba(42, 157, 143, 0.35);
+    background: rgba(42, 157, 143, 0.07);
+  }
+  .hud-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+    gap: 0.55rem;
+    align-items: stretch;
+  }
+  .presence-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+  .presence-card,
+  .pending-round,
+  .log-toolbar {
+    border: 1px solid var(--border);
+    background: rgba(18, 18, 21, 0.78);
+    border-radius: var(--radius);
+  }
+  .presence-card {
+    min-height: 68px;
+    padding: 0.55rem 0.65rem;
+    border-left: 3px solid var(--border-light);
+  }
+  .presence-card.user { border-left-color: var(--user); }
+  .presence-card.ai { border-left-color: var(--ai); }
+  .presence-card .label,
+  .pending-round .label {
+    color: var(--muted);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.22rem;
+  }
+  .presence-card .name {
+    color: var(--text);
+    font-weight: 800;
+    font-size: 0.86rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .presence-card .detail {
+    color: var(--muted);
+    font-size: 0.72rem;
+    line-height: 1.35;
+    margin-top: 0.15rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .presence-card .last-action {
+    color: var(--text);
+    opacity: 0.8;
+    font-size: 0.68rem;
+    margin-top: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pending-round {
+    padding: 0.55rem 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .pending-round.hidden { display: none !important; }
+  .pending-line {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 0.45rem;
+    align-items: baseline;
+    font-size: 0.74rem;
+    color: var(--muted);
+  }
+  .pending-line strong {
+    color: var(--text);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .pending-line span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .log-toolbar {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) auto auto;
+    gap: 0.45rem;
+    padding: 0.45rem;
+    align-items: center;
+  }
+  .log-toolbar input {
+    height: 32px;
+    font-size: 0.78rem;
+  }
+  .density-toggle.active {
+    color: var(--accent);
+    border-color: rgba(201, 162, 39, 0.45);
+    background: rgba(201, 162, 39, 0.1);
+  }
+  .roll-history {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    min-width: 128px;
+    justify-content: flex-end;
+  }
+  .roll-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 24px;
+    padding: 0 0.35rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--bg);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+  .roll-pill.roll-high,
+  .roll-pill.roll-crit { color: var(--success); border-color: rgba(42, 157, 143, 0.35); }
+  .roll-pill.roll-low { color: var(--danger); border-color: rgba(231, 111, 81, 0.35); }
+  .roll-pill.roll-mid { color: var(--accent); border-color: rgba(201, 162, 39, 0.35); }
+
   #log {
     flex: 1;
     overflow-y: auto;
@@ -435,6 +611,24 @@
       radial-gradient(ellipse at 80% 20%, rgba(142, 202, 230, 0.015) 0%, transparent 50%),
       var(--bg);
   }
+  #log.compact-log {
+    gap: 0.45rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  #log.compact-log .entry {
+    padding: 0.55rem 0.75rem;
+    line-height: 1.4;
+    font-size: 0.84rem;
+  }
+  #log.compact-log .entry.gm {
+    font-size: 0.92rem;
+    max-width: 92%;
+  }
+  #log.compact-log .entry .meta {
+    margin-bottom: 0.2rem;
+  }
+  .entry.search-hidden { display: none; }
 
   .entry {
     max-width: 78%;
@@ -634,6 +828,46 @@
   .welcome h2 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
   .welcome p { font-size: 0.9rem; color: var(--muted); max-width: 380px; line-height: 1.5; }
   .welcome .welcome-hint { font-size: 0.75rem; color: var(--border-light); margin-top: 0.5rem; }
+  .setup-checklist {
+    width: min(420px, 100%);
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.25rem;
+  }
+  .setup-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: rgba(26, 26, 31, 0.72);
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+  .setup-item.ready {
+    color: var(--text);
+    border-color: rgba(42, 157, 143, 0.35);
+    background: rgba(42, 157, 143, 0.07);
+  }
+  .setup-mark {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--border);
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 900;
+  }
+  .setup-item.ready .setup-mark {
+    background: var(--success);
+    color: #061b18;
+  }
 
   #inputBar {
     border-top: 1px solid var(--border);
@@ -644,8 +878,34 @@
     background: var(--panel);
     box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
   }
-  #inputBar textarea {
+  .input-stack {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+  .action-chips {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+  .action-chip {
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    box-shadow: none;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .action-chip:hover {
+    color: var(--text);
+    background: var(--panel-raised);
+    box-shadow: none;
+    transform: none;
+  }
+  #inputBar textarea {
     min-height: 44px;
     max-height: 120px;
     padding: 0.6rem 0.75rem;
@@ -813,6 +1073,18 @@
     .entry { max-width: 95%; }
     .entry.gm { max-width: 98%; }
     .entry .edit-btn { opacity: 1; }
+    #topBar { padding-left: 3.4rem; }
+    #playHud { padding: 0.55rem 0.65rem; }
+    .turn-tracker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hud-row,
+    .presence-grid,
+    .log-toolbar {
+      grid-template-columns: 1fr;
+    }
+    .roll-history { justify-content: flex-start; min-width: 0; }
+    #inputBar { flex-direction: column; align-items: stretch; }
+    .input-actions { flex-direction: row; }
+    .input-actions button { flex: 1; }
   }
 </style>
 </head>
@@ -953,6 +1225,11 @@
   </div>
 
   <div class="section">
+    <h2>Session Notes</h2>
+    <textarea id="sessionNotes" rows="5" placeholder="Clues, NPCs, promises, suspicious doors..."></textarea>
+  </div>
+
+  <div class="section">
     <h2>Quick Start</h2>
     <div id="quickStartSamples" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
   </div>
@@ -976,7 +1253,7 @@
 
   <div class="section">
     <h2>Game</h2>
-    <button onclick="restartGame()">Restart Game</button>
+    <button onclick="restartGame()">Start/Restart Game</button>
     <div class="row">
       <button class="secondary" onclick="undoLastRound()">Undo Round</button>
       <button class="secondary" onclick="regenerateGmResponse()">Re-roll GM</button>
@@ -989,7 +1266,7 @@
   <div id="topBar">
     <div class="status-section">
       <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">Ready — configure settings and press Restart Game to begin</span>
+      <span id="statusText">Ready — configure settings and press Start/Restart to begin</span>
       <span class="phase-badge" id="phaseBadge">Idle</span>
     </div>
     <div class="dice-chip" id="diceChip">
@@ -997,19 +1274,50 @@
       <span id="diceValue">d20 = —</span>
     </div>
     <div class="topbar-actions">
-      <button class="secondary" onclick="restartGame()">Restart</button>
+      <button class="secondary" onclick="restartGame()">Start/Restart</button>
+    </div>
+  </div>
+  <div id="playHud">
+    <div class="turn-tracker" id="turnTracker">
+      <div class="turn-step" data-phase="gm">1. GM Scene</div>
+      <div class="turn-step" data-phase="user">2. Your Action</div>
+      <div class="turn-step" data-phase="ai">3. AI Action</div>
+      <div class="turn-step" data-phase="resolution">4. Resolution</div>
+    </div>
+    <div class="hud-row">
+      <div class="presence-grid">
+        <div class="presence-card user" id="userPresence"></div>
+        <div class="presence-card ai" id="aiPresence"></div>
+      </div>
+      <div class="pending-round hidden" id="pendingRound"></div>
+    </div>
+    <div class="log-toolbar">
+      <input type="text" id="logSearch" placeholder="Find in story...">
+      <button class="secondary tiny-btn density-toggle" id="densityToggle" onclick="toggleLogDensity()">Compact</button>
+      <div class="roll-history" id="rollHistory" aria-label="Recent rolls"></div>
     </div>
   </div>
   <div id="log">
     <div class="welcome" id="welcome">
       <div class="welcome-icon">A</div>
       <h2>Project Aspen</h2>
-      <p>AI-powered tabletop RPG engine. Configure your API endpoint in the sidebar, then press Restart Game to begin your adventure.</p>
+      <p>AI-powered tabletop RPG engine. Configure your API endpoint in the sidebar, then press Start/Restart to begin your adventure.</p>
+      <div class="setup-checklist" id="setupChecklist"></div>
       <span class="welcome-hint">Supports llama.cpp, koboldcpp, and any OpenAI-compatible API</span>
     </div>
   </div>
   <div id="inputBar">
-    <textarea id="userInput" placeholder="What do you do?" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendUserAction();}"></textarea>
+    <div class="input-stack">
+      <div class="action-chips" id="actionChips">
+        <button class="action-chip" onclick="insertActionStarter('I say, ')">Speak</button>
+        <button class="action-chip" onclick="insertActionStarter('I investigate ')">Investigate</button>
+        <button class="action-chip" onclick="insertActionStarter('I attack ')">Attack</button>
+        <button class="action-chip" onclick="insertActionStarter('I help ')">Help</button>
+        <button class="action-chip" onclick="insertActionStarter('I wait and watch.')">Wait</button>
+        <button class="action-chip" onclick="insertActionStarter('I ask the GM: ')">Ask GM</button>
+      </div>
+      <textarea id="userInput" placeholder="What do you do?" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendUserAction();}"></textarea>
+    </div>
     <div class="input-actions">
       <button onclick="sendUserAction()">Roll d20 &amp; Send</button>
       <button class="secondary" onclick="skipTurn()">Skip</button>
@@ -1071,7 +1379,11 @@ const state = {
   gameLog: [],
   turnPhase: 'idle',
   lastRoll: null,
-  pendingAction: null
+  pendingAction: null,
+  sessionNotes: '',
+  logDensity: 'story',
+  logSearch: '',
+  rollHistory: []
 };
 
 const DEFAULT_SETTINGS = { ...state.settings };
@@ -1113,12 +1425,16 @@ const aiReviewText = $('aiReviewText');
 const statusText = $('statusText');
 const statusDot = $('statusDot');
 const goalEl = $('scenarioGoal');
+const notesEl = $('sessionNotes');
+const logSearchEl = $('logSearch');
+const rollHistoryEl = $('rollHistory');
+const pendingRoundEl = $('pendingRound');
+const userPresenceEl = $('userPresence');
+const aiPresenceEl = $('aiPresence');
 const welcomeEl = $('welcome');
 
 function removeWelcome() {
-  if (welcomeEl) {
-    welcomeEl.remove();
-  }
+  document.getElementById('welcome')?.remove();
 }
 
 function showWelcome() {
@@ -1126,8 +1442,9 @@ function showWelcome() {
   const div = document.createElement('div');
   div.className = 'welcome';
   div.id = 'welcome';
-  div.innerHTML = '<div class="welcome-icon">A</div><h2>Project Aspen</h2><p>AI-powered tabletop RPG engine. Configure your API endpoint in the sidebar, then press Restart Game to begin your adventure.</p><span class="welcome-hint">Supports llama.cpp, koboldcpp, and any OpenAI-compatible API</span>';
+  div.innerHTML = '<div class="welcome-icon">A</div><h2>Project Aspen</h2><p>AI-powered tabletop RPG engine. Configure your API endpoint in the sidebar, then press Start/Restart to begin your adventure.</p><div class="setup-checklist" id="setupChecklist"></div><span class="welcome-hint">Supports llama.cpp, koboldcpp, and any OpenAI-compatible API</span>';
   logEl.appendChild(div);
+  updateSetupChecklist();
 }
 
 function saveSettings() {
@@ -1156,6 +1473,7 @@ function saveSettings() {
     if (!state.scenario) state.scenario = {};
     state.scenario.scenario_goal = goal;
   }
+  state.sessionNotes = notesEl?.value || '';
   persistSettings();
 }
 
@@ -1189,6 +1507,8 @@ function loadSettingsUI() {
   $('aiHandicap').checked = settings.aiHandicap;
   $('aiModifier').value = settings.aiModifier;
   goalEl.value = state.scenario?.scenario_goal || '';
+  if (notesEl) notesEl.value = state.sessionNotes || '';
+  applyLogDensity();
   toggleDual();
   syncSwitchAria();
 }
@@ -1199,7 +1519,9 @@ function persistSettings() {
       settings: state.settings,
       scenario: state.scenario,
       userCard: state.userCard,
-      aiCard: state.aiCard
+      aiCard: state.aiCard,
+      sessionNotes: state.sessionNotes,
+      logDensity: state.logDensity
     };
     localStorage.setItem('aspen_session', JSON.stringify(toSave));
   } catch (e) {
@@ -1224,6 +1546,8 @@ function restoreSettings() {
     if (saved.aiCard) {
       state.aiCard = saved.aiCard;
     }
+    state.sessionNotes = saved.sessionNotes || '';
+    state.logDensity = saved.logDensity === 'compact' ? 'compact' : 'story';
     return true;
   } catch (e) { return false; }
 }
@@ -1278,6 +1602,169 @@ function showScenarioSummary(scenario) {
     : '';
 }
 
+function stripRollText(text) {
+  return (text || '').replace(/ \[Roll: \d+(?: \(raw \d+, [+-]\d+\))?\]/, '').trim();
+}
+
+function truncateText(text, max = 120) {
+  const clean = (text || '').replace(/\s+/g, ' ').trim();
+  return clean.length > max ? clean.substring(0, max - 3) + '...' : clean;
+}
+
+function getLastAction(role) {
+  for (let i = state.gameLog.length - 1; i >= 0; i--) {
+    if (state.gameLog[i].role === role) return stripRollText(state.gameLog[i].content);
+  }
+  return '';
+}
+
+function updateCharacterPresence() {
+  const cards = [
+    {
+      el: userPresenceEl,
+      cls: 'user',
+      label: 'User Player',
+      name: state.settings.userName,
+      card: state.userCard,
+      role: 'user',
+      handicap: state.settings.userHandicap,
+      mod: state.settings.userModifier
+    },
+    {
+      el: aiPresenceEl,
+      cls: 'ai',
+      label: 'AI Player',
+      name: state.settings.aiName,
+      card: state.aiCard,
+      role: 'ai',
+      handicap: state.settings.aiHandicap,
+      mod: state.settings.aiModifier
+    }
+  ];
+
+  cards.forEach(item => {
+    if (!item.el) return;
+    const detail = item.card?.summary || item.card?.personality || 'No character card loaded yet.';
+    const last = getLastAction(item.role);
+    const modText = item.handicap ? `Modifier ${item.mod >= 0 ? '+' : ''}${item.mod}` : 'No modifier';
+    item.el.className = `presence-card ${item.cls}`;
+    item.el.innerHTML = `
+      <div class="label">${escapeHtml(item.label)} &middot; ${escapeHtml(modText)}</div>
+      <div class="name">${escapeHtml(item.name || 'Unnamed')}</div>
+      <div class="detail">${escapeHtml(truncateText(detail, 150))}</div>
+      <div class="last-action">${last ? 'Last: ' + escapeHtml(truncateText(last, 95)) : 'No actions yet.'}</div>
+    `;
+  });
+}
+
+function updatePendingRoundPanel() {
+  if (!pendingRoundEl) return;
+  const round = state.pendingAction;
+  if (!round?.user && !round?.ai && !round?.aiDraft) {
+    pendingRoundEl.classList.add('hidden');
+    pendingRoundEl.innerHTML = '';
+    return;
+  }
+  const user = round.user;
+  const ai = round.ai || (round.aiDraft ? { name: state.settings.aiName, action: round.aiDraft, rollMeta: 'Draft' } : null);
+  const userText = user ? `${user.action}${user.rollMeta ? ' [' + user.rollMeta + ']' : ''}` : 'Waiting for your declaration.';
+  const aiText = ai ? `${ai.action}${ai.rollMeta ? ' [' + ai.rollMeta + ']' : ''}` : 'Waiting for AI declaration.';
+  pendingRoundEl.classList.remove('hidden');
+  pendingRoundEl.innerHTML = `
+    <div class="label">Current Round</div>
+    <div class="pending-line"><strong>${escapeHtml(state.settings.userName)}</strong><span title="${escapeHtml(userText)}">${escapeHtml(userText)}</span></div>
+    <div class="pending-line"><strong>${escapeHtml(state.settings.aiName)}</strong><span title="${escapeHtml(aiText)}">${escapeHtml(aiText)}</span></div>
+  `;
+}
+
+function updateTurnTracker() {
+  const steps = Array.from(document.querySelectorAll('#turnTracker .turn-step'));
+  const order = ['gm', 'user', 'ai', 'resolution'];
+  const phase = state.turnPhase === 'ai_review' ? 'ai' : state.turnPhase;
+  const activeIndex = order.indexOf(phase);
+  steps.forEach(step => {
+    const idx = order.indexOf(step.dataset.phase);
+    step.classList.toggle('active', idx === activeIndex);
+    step.classList.toggle('done', activeIndex > -1 && idx < activeIndex);
+  });
+}
+
+function updateSetupChecklist() {
+  const checklist = $('setupChecklist');
+  if (!checklist) return;
+  const checks = [
+    { label: 'API URL configured', ready: !!state.settings.apiUrl },
+    { label: 'Scenario loaded or goal written', ready: !!(state.scenario?.title || state.scenario?.description || state.scenario?.scenario_goal) },
+    { label: 'User character ready', ready: !!(state.userCard || state.settings.userName) },
+    { label: 'AI character ready', ready: !!(state.aiCard || state.settings.aiName) }
+  ];
+  checklist.innerHTML = checks.map(item => `
+    <div class="setup-item ${item.ready ? 'ready' : ''}">
+      <span>${escapeHtml(item.label)}</span>
+      <span class="setup-mark">${item.ready ? '&#10003;' : '&middot;'}</span>
+    </div>
+  `).join('');
+}
+
+function applyLogFilter() {
+  const term = (state.logSearch || '').trim().toLowerCase();
+  logEl.querySelectorAll('.entry').forEach(entry => {
+    const haystack = entry.dataset.searchText || entry.textContent || '';
+    entry.classList.toggle('search-hidden', !!term && !haystack.toLowerCase().includes(term));
+  });
+}
+
+function applyLogDensity() {
+  logEl.classList.toggle('compact-log', state.logDensity === 'compact');
+  const btn = $('densityToggle');
+  if (btn) {
+    btn.classList.toggle('active', state.logDensity === 'compact');
+    btn.textContent = state.logDensity === 'compact' ? 'Story' : 'Compact';
+  }
+}
+
+function toggleLogDensity() {
+  state.logDensity = state.logDensity === 'compact' ? 'story' : 'compact';
+  applyLogDensity();
+  persistSettings();
+}
+
+function insertActionStarter(text) {
+  if (!inputEl) return;
+  const current = inputEl.value;
+  if (current.trim()) {
+    const needsSpace = !/\s$/.test(current);
+    inputEl.value = current + (needsSpace ? ' ' : '') + text;
+  } else {
+    inputEl.value = text;
+  }
+  inputEl.focus();
+  inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function updateRollHistory() {
+  if (!rollHistoryEl) return;
+  if (!state.rollHistory.length) {
+    rollHistoryEl.innerHTML = '<span class="roll-pill" title="No rolls yet">--</span>';
+    return;
+  }
+  rollHistoryEl.innerHTML = state.rollHistory.slice(-5).map(item => {
+    const label = `${item.actor}: ${item.roll}`;
+    return `<span class="roll-pill ${getRollClass(item.roll)}" title="${escapeHtml(label)}">${item.roll}</span>`;
+  }).join('');
+}
+
+function updateAllUi() {
+  updatePhaseBadge();
+  updateTurnTracker();
+  updatePendingRoundPanel();
+  updateCharacterPresence();
+  updateSetupChecklist();
+  applyLogDensity();
+  applyLogFilter();
+  updateRollHistory();
+}
+
 function updatePhaseBadge() {
   const badge = $('phaseBadge');
   if (!badge) return;
@@ -1292,16 +1779,22 @@ function updatePhaseBadge() {
   const p = phases[state.turnPhase] || phases.idle;
   badge.textContent = p.label;
   badge.className = `phase-badge ${p.cls}`;
+  updateTurnTracker();
+  updatePendingRoundPanel();
 }
 
 function applyPreset() {
   const p = $('preset').value;
   if (p === 'llamacpp') { $('apiUrl').value = 'http://localhost:8080/v1'; }
   else if (p === 'koboldcpp') { $('apiUrl').value = 'http://localhost:5001/v1'; }
+  saveSettings();
+  updateAllUi();
 }
 
 function toggleDual() {
   $('dualSettings').classList.toggle('hidden', !$('dualToggle').checked);
+  saveSettings();
+  updateAllUi();
 }
 
 function toggleSidebar() {
@@ -1402,6 +1895,7 @@ function renderEntry(role, text, meta, index, edited) {
   div.className = `entry ${role}`;
   if (index !== undefined && index !== null) div.dataset.logIndex = index;
   const roleLabel = role === 'gm' ? 'Game Master' : role === 'user' ? state.settings.userName : state.settings.aiName;
+  div.dataset.searchText = `${role} ${roleLabel || ''} ${text || ''} ${meta || ''}`;
   const roleIcon = role === 'gm' ? '&#9876;' : role === 'user' ? '&#9876;' : '&#10024;';
   let metaHtml = '';
   if (meta) {
@@ -1422,12 +1916,15 @@ function renderEntry(role, text, meta, index, edited) {
     : '';
   div.innerHTML = `<div class="meta"><span class="role-icon">${roleIcon}</span> ${escapeHtml(roleLabel)}${metaHtml}${editedTag}</div><span class="entry-text">${escapeHtml(text)}</span>${editBtn}`;
   logEl.appendChild(div);
+  applyLogFilter();
   logEl.scrollTop = logEl.scrollHeight;
 }
 
 function appendLog(role, text, meta) {
   state.gameLog.push({ role, content: text });
   renderEntry(role, text, meta, state.gameLog.length - 1, false);
+  updateCharacterPresence();
+  updateSetupChecklist();
 }
 
 function escapeHtml(s) {
@@ -1535,8 +2032,11 @@ function saveEditEntry(index) {
   }
 
   if (textSpan) textSpan.textContent = newText;
+  el.dataset.searchText = `gm Game Master ${newText}`;
 
   editingState.index = null;
+  updateCharacterPresence();
+  applyLogFilter();
   logEl.scrollTop = logEl.scrollHeight;
 }
 
@@ -1605,10 +2105,13 @@ function setStatus(msg) {
   statusText.textContent = msg;
 }
 
-function showDice(roll) {
+function showDice(roll, actor = 'd20') {
   state.lastRoll = roll;
   diceValueEl.textContent = `d20 = ${roll}`;
   diceChipEl.className = 'dice-chip flash ' + getDiceChipClass(roll);
+  state.rollHistory.push({ actor, roll });
+  state.rollHistory = state.rollHistory.slice(-8);
+  updateRollHistory();
   setTimeout(() => {
     diceChipEl.classList.remove('flash');
   }, 600);
@@ -1756,7 +2259,7 @@ async function sendUserAction() {
   removeWelcome();
   const rawRoll = rollD20();
   const result = applyHandicap(rawRoll, true);
-  showDice(result.final);
+  showDice(result.final, state.settings.userName);
   const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
   appendLog('user', `${text} [${rollMeta}]`);
   state.pendingAction = {
@@ -1794,6 +2297,7 @@ async function aiTurn() {
     const prompt = buildAiPrompt();
     const action = await callLLM(prompt, 'ai');
     state.pendingAction.aiDraft = action;
+    updatePendingRoundPanel();
     if (state.settings.manualReview) {
       reviewStarted = true;
       state.turnPhase = 'ai_review';
@@ -1823,7 +2327,7 @@ async function resolveAiAction(action) {
   action = action.replace(/\[Roll:.*?\]/g, '').trim();
   const rawRoll = rollD20();
   const result = applyHandicap(rawRoll, false);
-  showDice(result.final);
+  showDice(result.final, state.settings.aiName);
   const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
   appendLog('ai', `${action} [${rollMeta}]`);
   if (!state.pendingAction?.user) {
@@ -1839,6 +2343,7 @@ async function resolveAiAction(action) {
     rollMeta
   };
   delete state.pendingAction.aiDraft;
+  updatePendingRoundPanel();
   setBusy(true);
   setStatus('Resolving round...');
   showTypingIndicator();
@@ -1885,6 +2390,7 @@ async function regenerateAiAction() {
     if (!state.pendingAction) state.pendingAction = {};
     state.pendingAction.aiDraft = action;
     aiReviewText.value = action;
+    updatePendingRoundPanel();
   } catch (e) {
     aiReviewText.value = `[Error: ${e.message}]`;
   } finally {
@@ -1924,8 +2430,10 @@ function restartGame() {
   updatePhaseBadge();
   state.pendingAction = null;
   state.lastRoll = null;
+  state.rollHistory = [];
   diceValueEl.textContent = 'd20 = —';
   diceChipEl.className = 'dice-chip';
+  updateAllUi();
   gmNarrative();
 }
 
@@ -1937,9 +2445,11 @@ function clearOutput() {
   updatePhaseBadge();
   state.pendingAction = null;
   state.lastRoll = null;
+  state.rollHistory = [];
   diceValueEl.textContent = 'd20 = —';
   diceChipEl.className = 'dice-chip';
-  setStatus('Output cleared. Press Restart Game to begin a new session.');
+  updateAllUi();
+  setStatus('Output cleared. Press Start/Restart to begin a new session.');
   showWelcome();
 }
 
@@ -2016,6 +2526,8 @@ function importCard(input) {
     else { state.userCard = card; $('userName').value = card.name; }
     showToast(`Imported ${card.name}.`, 'success');
     showCardSummary(card, target ? 'ai' : 'user');
+    saveSettings();
+    updateAllUi();
   });
 }
 
@@ -2038,6 +2550,8 @@ function importScenario(input) {
     goalEl.value = state.scenario.scenario_goal || '';
     showToast(`Imported scenario: ${state.scenario.title}`, 'success');
     showScenarioSummary(state.scenario);
+    saveSettings();
+    updateAllUi();
   });
 }
 
@@ -2049,8 +2563,15 @@ function importSave(input) {
     state.userCard = data.user_card || null;
     state.aiCard = data.ai_card || null;
     state.gameLog = data.game_log || [];
+    state.sessionNotes = data.session_notes || data.sessionNotes || '';
+    state.logDensity = data.log_density === 'compact' || data.logDensity === 'compact' ? 'compact' : state.logDensity;
+    state.pendingAction = null;
+    state.lastRoll = null;
+    state.rollHistory = [];
+    state.turnPhase = state.gameLog.length ? 'user' : 'idle';
     loadSettingsUI();
     renderLog();
+    updateAllUi();
     showToast('Save loaded.', 'success');
     if (state.userCard) showCardSummary(state.userCard, 'user');
     if (state.aiCard) showCardSummary(state.aiCard, 'ai');
@@ -2067,6 +2588,7 @@ function exportSave() {
     scenario: state.scenario,
     user_card: state.userCard,
     ai_card: state.aiCard,
+    session_notes: state.sessionNotes,
     game_log: state.gameLog
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2119,6 +2641,7 @@ function renderLog() {
     const text = e.content.replace(/ \[Roll: \d+(?: \(raw \d+, [+-]\d+\))?\]/, '');
     renderEntry(e.role, text, meta, i, e.edited === true);
   });
+  updateAllUi();
 }
 
 function undoLastRound() {
@@ -2146,7 +2669,7 @@ function undoLastRound() {
   updatePhaseBadge();
   if (log.length === 0) {
     inputEl.placeholder = 'What do you do?';
-    setStatus('Log is empty. Press Restart Game to begin a new session.');
+    setStatus('Log is empty. Press Start/Restart to begin a new session.');
     showWelcome();
   } else {
     inputEl.placeholder = `${state.settings.userName}, what do you do?`;
@@ -2231,12 +2754,16 @@ function loadQuickStartSamples() {
         state.scenario = s.data;
         goalEl.value = s.data.scenario_goal || '';
         showScenarioSummary(s.data);
+        saveSettings();
+        updateAllUi();
         showToast(`Loaded scenario: ${s.data.title}`, 'success');
       } else {
         const target = s.target || 'user';
         if (target === 'ai') { state.aiCard = s.data; $('aiName').value = s.data.name; }
         else { state.userCard = s.data; $('userName').value = s.data.name; }
         showCardSummary(s.data, target);
+        saveSettings();
+        updateAllUi();
         showToast(`Loaded character: ${s.data.name}`, 'success');
       }
     };
@@ -2245,6 +2772,30 @@ function loadQuickStartSamples() {
 }
 
 setupAutoResize(inputEl);
+setupAutoResize(notesEl);
+
+if (notesEl) {
+  notesEl.addEventListener('input', () => {
+    state.sessionNotes = notesEl.value;
+    persistSettings();
+  });
+}
+
+if (logSearchEl) {
+  logSearchEl.addEventListener('input', () => {
+    state.logSearch = logSearchEl.value;
+    applyLogFilter();
+  });
+}
+
+['apiUrl', 'userName', 'aiName', 'scenarioGoal'].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    saveSettings();
+    updateAllUi();
+  });
+});
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
@@ -2264,7 +2815,7 @@ loadQuickStartSamples();
 if (state.userCard) showCardSummary(state.userCard, 'user');
 if (state.aiCard) showCardSummary(state.aiCard, 'ai');
 if (state.scenario) showScenarioSummary(state.scenario);
-updatePhaseBadge();
+updateAllUi();
 </script>
 </body>
 </html>

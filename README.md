@@ -30,7 +30,7 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 4. Enter a model name if your backend requires one.
 5. Import a scenario from `scenarios/`, use a **Quick Start** sample, or type a Scenario Goal manually.
 6. Import character cards from `cards/`, use a Quick Start sample, or use the default player names.
-7. Click **Restart Game** to have the GM begin the scene.
+7. Click **Start/Restart Game** to have the GM begin the scene.
 8. Type your action, click **Roll d20 & Send**, then let the AI player act.
 9. The GM will resolve both player actions together and continue the scenario.
 
