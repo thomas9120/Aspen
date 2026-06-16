@@ -144,6 +144,7 @@ Aspen/
 - No build step is required.
 - The main app is plain HTML, CSS, and JavaScript.
 - Edit `index.html` directly.
+- Run dependency-free tests with `node --test "tests/*.test.js"`.
 - Settings are auto-persisted to `localStorage` under the key `aspen_session`.
 - If you change prompt architecture or turn sequencing, update `AGENTS.md` and `docs/GM_logic.md`.
 - If testing API calls, make sure your local backend allows browser requests from a `file://` page or use a local static server.

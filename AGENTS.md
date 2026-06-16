@@ -297,7 +297,7 @@ No external state management library is used. Everything is vanilla JS.
 
 - **No build step.** Edit `index.html` directly.
 - **No external CDN dependencies.** All CSS and JS are inline.
-- **Testing:** Open `index.html` in a browser. If testing API calls, a local CORS-enabled server (like llama.cpp or koboldcpp) must be running.
+- **Testing:** Run `node --test "tests/*.test.js"` for dependency-free regression tests. Open `index.html` in a browser for manual UI/API checks. If testing API calls, a local CORS-enabled server (like llama.cpp or koboldcpp) must be running.
 - **Documentation:** Any architectural changes must be reflected in this `AGENTS.md` file.
 
 ---
