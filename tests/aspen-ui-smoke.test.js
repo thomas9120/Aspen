@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const test = require('node:test');
-const { projectRoot, readIndexHtml, readInlineScript } = require('./helpers/aspenTestUtils');
+const { loadFunctions, projectRoot, readIndexHtml, readInlineScript } = require('./helpers/aspenTestUtils');
 
 function serveProject() {
   const server = http.createServer((req, res) => {
@@ -50,6 +50,10 @@ test('index page exposes the polished UI controls and serves image assets', asyn
   assert.match(html, /id="densityToggle"/);
   assert.match(html, /id="sidebarCollapseBtn"/);
   assert.match(html, /id="hudCollapseBtn"/);
+  assert.match(html, /id="storySummary"/);
+  assert.match(html, /id="updateSummaryBtn"/);
+  assert.match(html, /Story Summary/);
+  assert.match(html, /Update Summary/);
   assert.match(html, /id="turnTracker"/);
   assert.match(html, /GM Scene/);
   assert.match(html, /Your Action/);
@@ -64,6 +68,8 @@ test('index page exposes the polished UI controls and serves image assets', asyn
   assert.match(script, /function toggleStorySearch/);
   assert.match(script, /function applySidebarCollapse/);
   assert.match(script, /function applyHudCollapse/);
+  assert.match(script, /function updateStorySummary/);
+  assert.match(script, /story_summary/);
 });
 
 test('README screenshot asset exists and is linked from the quick start area', () => {
@@ -73,4 +79,58 @@ test('README screenshot asset exists and is linked from the quick start area', (
   assert.match(readme, /## Quick Start[\s\S]*!\[Aspen chat interface\]\(docs\/aspen_screenshot\.jpg\)[\s\S]*## API Setup/);
   assert.ok(fs.existsSync(path.join(projectRoot, 'docs', 'aspen_screenshot.jpg')));
   assert.match(html, /docs\/dice_logo\.png/);
+});
+
+test('story search does not reselect text on every input while open', () => {
+  let focusCount = 0;
+  let selectCount = 0;
+  let filterCount = 0;
+  const topbarSearchEl = {
+    open: false,
+    classList: {
+      contains(cls) {
+        return cls === 'open' && topbarSearchEl.open;
+      },
+      toggle(cls, value) {
+        if (cls === 'open') topbarSearchEl.open = value;
+      }
+    }
+  };
+  const logSearchEl = {
+    value: 'ab',
+    focus() {
+      focusCount++;
+    },
+    select() {
+      selectCount++;
+    }
+  };
+  const searchToggleBtn = {
+    setAttribute() {},
+    classList: {
+      toggle() {}
+    }
+  };
+  const context = loadFunctions(['toggleStorySearch'], {
+    topbarSearchEl,
+    logSearchEl,
+    searchToggleBtn,
+    state: { logSearch: 'ab' },
+    applyLogFilter() {
+      filterCount++;
+    }
+  });
+
+  context.toggleStorySearch(true);
+  assert.equal(topbarSearchEl.open, true);
+  assert.equal(focusCount, 1);
+  assert.equal(selectCount, 1);
+
+  context.toggleStorySearch(true);
+  assert.equal(focusCount, 1);
+  assert.equal(selectCount, 1);
+
+  context.toggleStorySearch(false);
+  assert.equal(logSearchEl.value, '');
+  assert.equal(filterCount, 1);
 });
