@@ -1,6 +1,6 @@
 # GM Logic
 
-This document explains how Project Aspen sequences the Game Master, user player, and AI player. The goal is to make the game feel like a tabletop round: the GM frames the scene, both players declare what they do, and then the GM resolves the combined outcome.
+This document explains how Aspen sequences the Game Master, user player, and AI player. The goal is to make the game feel like a tabletop round: the GM frames the scene, both players declare what they do, and then the GM resolves the combined outcome.
 
 ---
 
