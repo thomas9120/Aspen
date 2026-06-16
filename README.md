@@ -12,15 +12,21 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 - Optional Dual-LLM mode for separate GM and AI Player endpoints
 - Character card import, including Aspen and TavernAI/SillyTavern-style JSON
 - Scenario/world import with a persistent Scenario Goal
-- Save export/import
-- Settings auto-saved to localStorage (persists across refreshes)
+- Session notes scratchpad for clues, NPCs, promises, and reminders
+- Save export/import, including session notes
+- Settings and UI preferences auto-saved to localStorage (persists across refreshes)
 - Toast notifications (non-blocking feedback for all operations)
-- Quick Start samples to try the app immediately
+- Quick Start samples and setup checklist to try the app immediately
 - Test Connection button to verify API setup
 - Manual AI Review mode for editing or regenerating AI player actions
 - Round-based flow: GM sets the scene, user acts, AI acts, then GM resolves both actions together
-- Undo Last Round and Regenerate GM Response buttons
-- Phase indicator showing current game state
+- Turn phase tracker showing GM Scene, Your Action, AI Action, and Resolution
+- Collapsible sampler/settings sidebar and collapsible play HUD
+- Character presence cards and pending round summary
+- Story search, Story/Compact density toggle, and recent roll history
+- Action starter chips for common tabletop actions
+- Optional d20 handicap modifiers for the user and AI player
+- Undo Round and Re-roll GM controls
 
 ## Quick Start
 
@@ -30,9 +36,11 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 4. Enter a model name if your backend requires one.
 5. Import a scenario from `scenarios/`, use a **Quick Start** sample, or type a Scenario Goal manually.
 6. Import character cards from `cards/`, use a Quick Start sample, or use the default player names.
-7. Click **Start/Restart Game** to have the GM begin the scene.
+7. Click **Start/Restart** to have the GM begin the scene.
 8. Type your action, click **Roll d20 & Send**, then let the AI player act.
 9. The GM will resolve both player actions together and continue the scenario.
+
+![Aspen chat interface](docs/aspen_screenshot.jpg)
 
 ## API Setup
 
@@ -94,7 +102,7 @@ See [CREATE_SCENARIO.md](docs/CREATE_SCENARIO.md) for the scenario format.
 
 ## Saving and Loading
 
-- **Export Save** downloads the current settings, scenario, character cards, and game log as JSON.
+- **Export Save** downloads the current settings, scenario, character cards, session notes, and game log as JSON.
 - **Import Save** restores a previous session.
 
 Because the app runs from a local HTML file, imports use normal browser file pickers. Aspen does not directly read folders from disk.
