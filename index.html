@@ -469,8 +469,41 @@
   .dice-chip.crit { border-color: #ffd700; color: #ffd700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
   .dice-chip.fail { border-color: var(--danger); color: var(--danger); }
 
-  .topbar-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+  .topbar-tools,
+  .topbar-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
   #topBar button { font-size: 0.75rem; padding: 0.3rem 0.6rem; }
+  .topbar-search {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .icon-btn {
+    width: 32px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .topbar-search input {
+    width: 0;
+    min-width: 0;
+    height: 30px;
+    opacity: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-width: 0;
+    pointer-events: none;
+    transition: width 0.2s ease, opacity 0.2s ease, padding 0.2s ease, border-width 0.2s ease;
+  }
+  .topbar-search.open input {
+    width: min(220px, 24vw);
+    opacity: 1;
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+    border-width: 1px;
+    pointer-events: auto;
+  }
 
   #playHud {
     display: flex;
@@ -525,8 +558,7 @@
     gap: 0.45rem;
   }
   .presence-card,
-  .pending-round,
-  .log-toolbar {
+  .pending-round {
     border: 1px solid var(--border);
     background: rgba(18, 18, 21, 0.78);
     border-radius: var(--radius);
@@ -599,17 +631,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  .log-toolbar {
-    display: grid;
-    grid-template-columns: minmax(150px, 1fr) auto auto;
-    gap: 0.45rem;
-    padding: 0.45rem;
-    align-items: center;
-  }
-  .log-toolbar input {
-    height: 32px;
-    font-size: 0.78rem;
   }
   .density-toggle.active {
     color: var(--accent);
@@ -1137,12 +1158,24 @@
     .entry { max-width: 95%; }
     .entry.gm { max-width: 98%; }
     .entry .edit-btn { opacity: 1; }
-    #topBar { padding-left: 3.4rem; }
+    #topBar {
+      padding-left: 3.4rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .status-section { flex-basis: 100%; }
+    .topbar-tools {
+      flex: 1;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .topbar-search.open input {
+      width: min(210px, calc(100vw - 180px));
+    }
     #playHud { padding: 0.55rem 0.65rem; }
     .turn-tracker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .hud-row,
-    .presence-grid,
-    .log-toolbar {
+    .presence-grid {
       grid-template-columns: 1fr;
     }
     .roll-history { justify-content: flex-start; min-width: 0; }
@@ -1338,6 +1371,14 @@
       <span class="die-icon">&#127922;</span>
       <span id="diceValue">d20 = —</span>
     </div>
+    <div class="topbar-tools">
+      <div class="roll-history" id="rollHistory" aria-label="Recent rolls"></div>
+      <button class="secondary tiny-btn density-toggle" id="densityToggle" onclick="toggleLogDensity()">Compact</button>
+      <div class="topbar-search" id="topbarSearch">
+        <button class="secondary icon-btn" id="searchToggleBtn" onclick="toggleStorySearch()" title="Find in story" aria-label="Find in story" aria-expanded="false">&#128269;</button>
+        <input type="text" id="logSearch" placeholder="Find in story...">
+      </div>
+    </div>
     <div class="topbar-actions">
       <button class="secondary" onclick="restartGame()">Start/Restart</button>
     </div>
@@ -1355,11 +1396,6 @@
         <div class="presence-card ai" id="aiPresence"></div>
       </div>
       <div class="pending-round hidden" id="pendingRound"></div>
-    </div>
-    <div class="log-toolbar">
-      <input type="text" id="logSearch" placeholder="Find in story...">
-      <button class="secondary tiny-btn density-toggle" id="densityToggle" onclick="toggleLogDensity()">Compact</button>
-      <div class="roll-history" id="rollHistory" aria-label="Recent rolls"></div>
     </div>
   </div>
   <div id="log">
@@ -1493,6 +1529,8 @@ const statusDot = $('statusDot');
 const goalEl = $('scenarioGoal');
 const notesEl = $('sessionNotes');
 const logSearchEl = $('logSearch');
+const topbarSearchEl = $('topbarSearch');
+const searchToggleBtn = $('searchToggleBtn');
 const rollHistoryEl = $('rollHistory');
 const pendingRoundEl = $('pendingRound');
 const userPresenceEl = $('userPresence');
@@ -1782,6 +1820,24 @@ function applyLogFilter() {
     const haystack = entry.dataset.searchText || entry.textContent || '';
     entry.classList.toggle('search-hidden', !!term && !haystack.toLowerCase().includes(term));
   });
+}
+
+function toggleStorySearch(forceOpen) {
+  if (!topbarSearchEl || !logSearchEl) return;
+  const open = forceOpen === undefined ? !topbarSearchEl.classList.contains('open') : !!forceOpen;
+  topbarSearchEl.classList.toggle('open', open);
+  if (searchToggleBtn) {
+    searchToggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    searchToggleBtn.classList.toggle('active', open);
+  }
+  if (open) {
+    logSearchEl.focus();
+    logSearchEl.select();
+    return;
+  }
+  logSearchEl.value = '';
+  state.logSearch = '';
+  applyLogFilter();
 }
 
 function applyLogDensity() {
@@ -2872,7 +2928,15 @@ if (notesEl) {
 if (logSearchEl) {
   logSearchEl.addEventListener('input', () => {
     state.logSearch = logSearchEl.value;
+    toggleStorySearch(true);
     applyLogFilter();
+  });
+  logSearchEl.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      toggleStorySearch(false);
+      searchToggleBtn?.focus();
+    }
   });
 }
 
@@ -2887,6 +2951,10 @@ if (logSearchEl) {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    if (topbarSearchEl?.classList.contains('open')) {
+      toggleStorySearch(false);
+      return;
+    }
     if (overlayEl.classList.contains('show')) {
       overlayEl.classList.remove('show');
       setBusy(false);
