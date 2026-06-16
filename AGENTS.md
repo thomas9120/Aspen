@@ -234,11 +234,15 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
   - Import Save (file picker)
 
 ### Main Stage
+- **Top Bar**
+  - Connection/status text, dice roll chip, roll history, Story/Compact density toggle, expandable story search, and Start/Restart.
+- **Play HUD** (collapsible below the phase tracker)
+  - Turn phase tracker remains visible when collapsed: GM Scene, Your Action, AI Action, Resolution.
+  - Expanded details show character presence cards and the pending/current round summary.
 - **Scene Log** (scrollable, auto-scrolls to bottom)
   - GM entries styled with a parchment/dark theme
   - User entries right-aligned
   - AI entries left-aligned with distinct color
-- **Dice Roll Indicator** (small banner showing last roll)
 
 ### Bottom Input Bar
 - **User Action Input** (text area)
@@ -275,7 +279,13 @@ const state = {
   gameLog: [],
   turnPhase: 'gm', // 'gm' | 'user' | 'ai' | 'ai_review' | 'resolution'
   lastRoll: null,
-  pendingAction: null // null or { user: { name, action, roll, rollMeta }, ai: { name, action, roll, rollMeta } }
+  pendingAction: null, // null or { user: { name, action, roll, rollMeta }, ai: { name, action, roll, rollMeta } }
+  sessionNotes: '',
+  logDensity: 'story',
+  logSearch: '',
+  sidebarCollapsed: false,
+  hudCollapsed: false,
+  rollHistory: []
 };
 ```
 

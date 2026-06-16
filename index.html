@@ -513,6 +513,50 @@
     background: rgba(26, 26, 31, 0.96);
     border-bottom: 1px solid var(--border);
   }
+  .hud-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    align-items: center;
+  }
+  .hud-collapse-btn {
+    width: 30px;
+    height: 28px;
+    padding: 0;
+    border-radius: 6px;
+    background: var(--panel-raised);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    box-shadow: none;
+    font-size: 0.7rem;
+    line-height: 1;
+  }
+  .hud-collapse-btn:hover {
+    color: var(--text);
+    background: var(--border);
+    filter: none;
+    transform: none;
+    box-shadow: none;
+  }
+  .hud-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition: grid-template-rows 0.2s ease, opacity 0.2s ease;
+  }
+  .hud-body-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+  #playHud.collapsed {
+    gap: 0;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+  #playHud.collapsed .hud-body {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
   .turn-tracker {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1384,18 +1428,25 @@
     </div>
   </div>
   <div id="playHud">
-    <div class="turn-tracker" id="turnTracker">
-      <div class="turn-step" data-phase="gm">1. GM Scene</div>
-      <div class="turn-step" data-phase="user">2. Your Action</div>
-      <div class="turn-step" data-phase="ai">3. AI Action</div>
-      <div class="turn-step" data-phase="resolution">4. Resolution</div>
-    </div>
-    <div class="hud-row">
-      <div class="presence-grid">
-        <div class="presence-card user" id="userPresence"></div>
-        <div class="presence-card ai" id="aiPresence"></div>
+    <div class="hud-header">
+      <div class="turn-tracker" id="turnTracker">
+        <div class="turn-step" data-phase="gm">1. GM Scene</div>
+        <div class="turn-step" data-phase="user">2. Your Action</div>
+        <div class="turn-step" data-phase="ai">3. AI Action</div>
+        <div class="turn-step" data-phase="resolution">4. Resolution</div>
       </div>
-      <div class="pending-round hidden" id="pendingRound"></div>
+      <button class="hud-collapse-btn" id="hudCollapseBtn" type="button" onclick="toggleHudCollapse()" title="Collapse play details" aria-label="Collapse play details" aria-expanded="true">&#9650;</button>
+    </div>
+    <div class="hud-body" id="hudBody">
+      <div class="hud-body-inner">
+        <div class="hud-row">
+          <div class="presence-grid">
+            <div class="presence-card user" id="userPresence"></div>
+            <div class="presence-card ai" id="aiPresence"></div>
+          </div>
+          <div class="pending-round hidden" id="pendingRound"></div>
+        </div>
+      </div>
     </div>
   </div>
   <div id="log">
@@ -1485,6 +1536,7 @@ const state = {
   logDensity: 'story',
   logSearch: '',
   sidebarCollapsed: false,
+  hudCollapsed: false,
   rollHistory: []
 };
 
@@ -1535,6 +1587,8 @@ const rollHistoryEl = $('rollHistory');
 const pendingRoundEl = $('pendingRound');
 const userPresenceEl = $('userPresence');
 const aiPresenceEl = $('aiPresence');
+const playHudEl = $('playHud');
+const hudCollapseBtn = $('hudCollapseBtn');
 const sidebarEl = $('sidebar');
 const sidebarCollapseBtn = $('sidebarCollapseBtn');
 const welcomeEl = $('welcome');
@@ -1628,7 +1682,8 @@ function persistSettings() {
       aiCard: state.aiCard,
       sessionNotes: state.sessionNotes,
       logDensity: state.logDensity,
-      sidebarCollapsed: state.sidebarCollapsed
+      sidebarCollapsed: state.sidebarCollapsed,
+      hudCollapsed: state.hudCollapsed
     };
     localStorage.setItem('aspen_session', JSON.stringify(toSave));
   } catch (e) {
@@ -1656,6 +1711,7 @@ function restoreSettings() {
     state.sessionNotes = saved.sessionNotes || '';
     state.logDensity = saved.logDensity === 'compact' ? 'compact' : 'story';
     state.sidebarCollapsed = saved.sidebarCollapsed === true;
+    state.hudCollapsed = saved.hudCollapsed === true;
     return true;
   } catch (e) { return false; }
 }
@@ -1888,6 +1944,7 @@ function updateAllUi() {
   updateSetupChecklist();
   applyLogDensity();
   applySidebarCollapse();
+  applyHudCollapse();
   applyLogFilter();
   updateRollHistory();
 }
@@ -1942,6 +1999,23 @@ function applySidebarCollapse() {
 function toggleSidebarCollapse() {
   state.sidebarCollapsed = !state.sidebarCollapsed;
   applySidebarCollapse();
+  persistSettings();
+}
+
+function applyHudCollapse() {
+  if (!playHudEl) return;
+  playHudEl.classList.toggle('collapsed', state.hudCollapsed);
+  if (!hudCollapseBtn) return;
+  const label = state.hudCollapsed ? 'Expand play details' : 'Collapse play details';
+  hudCollapseBtn.innerHTML = state.hudCollapsed ? '&#9660;' : '&#9650;';
+  hudCollapseBtn.title = label;
+  hudCollapseBtn.setAttribute('aria-label', label);
+  hudCollapseBtn.setAttribute('aria-expanded', state.hudCollapsed ? 'false' : 'true');
+}
+
+function toggleHudCollapse() {
+  state.hudCollapsed = !state.hudCollapsed;
+  applyHudCollapse();
   persistSettings();
 }
 
