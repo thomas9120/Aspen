@@ -13,13 +13,15 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 - Character card import, including Aspen and TavernAI/SillyTavern-style JSON
 - Scenario/world import with a persistent Scenario Goal
 - Session notes scratchpad for clues, NPCs, promises, and reminders
-- Save export/import, including session notes
+- Editable Story Summary memory with manual update from older history
+- Save export/import, including session notes and story summary
 - Settings and UI preferences auto-saved to localStorage (persists across refreshes)
 - Toast notifications (non-blocking feedback for all operations)
 - Quick Start samples and setup checklist to try the app immediately
 - Test Connection button to verify API setup
 - Manual AI Review mode for editing or regenerating AI player actions
 - Round-based flow: GM sets the scene, user acts, AI acts, then GM resolves both actions together
+- Recent context window keeps LLM prompts focused on the latest 12 story entries while preserving the full visible/save history
 - Turn phase tracker showing GM Scene, Your Action, AI Action, and Resolution
 - Collapsible sampler/settings sidebar and collapsible play HUD
 - Character presence cards and pending round summary
@@ -73,6 +75,8 @@ The GM does not resolve the user action immediately. Instead, Aspen waits for th
 
 This keeps the AI player involved in the same scene beat and avoids having the GM skip over them.
 
+To keep long sessions lighter, Aspen sends an optional Story Summary plus only the latest 12 story log entries to GM and AI prompts. Use **Update Summary** to merge older history into the summary. The full story remains visible in the app and is still included in exported saves.
+
 ## Importing Content
 
 ### Character Cards
@@ -102,7 +106,7 @@ See [CREATE_SCENARIO.md](docs/CREATE_SCENARIO.md) for the scenario format.
 
 ## Saving and Loading
 
-- **Export Save** downloads the current settings, scenario, character cards, session notes, and game log as JSON.
+- **Export Save** downloads the current settings, scenario, character cards, session notes, story summary, and game log as JSON.
 - **Import Save** restores a previous session.
 
 Because the app runs from a local HTML file, imports use normal browser file pickers. Aspen does not directly read folders from disk.

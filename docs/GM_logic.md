@@ -82,6 +82,8 @@ state.pendingAction = {
 
 After the GM response is added to `gameLog`, `pendingAction` is cleared.
 
+Prompt builders use the editable Story Summary plus only the latest 12 `gameLog` entries as scene history. The full `gameLog` remains visible in the UI and is preserved in saves. The manual **Update Summary** action summarizes only older entries outside the recent window.
+
 ---
 
 ## Prompt Responsibilities
@@ -157,6 +159,7 @@ Only after confirmation does Aspen roll for the AI and ask the GM to resolve bot
 
 - Every API call is stateless; prompts are rebuilt from local state each time.
 - `gameLog` remains the source of visible history.
+- GM and AI prompts receive Story Summary plus a recent context window, not the full saved/displayed log.
 - `pendingAction` is temporary and should not be exported as part of save history.
 - The GM resolves rounds, not isolated player actions.
 - The AI player acts before knowing the GM's outcome for the user's action.

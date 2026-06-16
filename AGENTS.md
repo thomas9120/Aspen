@@ -51,7 +51,7 @@ The game proceeds in discrete turns. Each full round consists of the following p
 5. **Loop**
    - The cycle returns to the User Player Phase.
 
-**Important:** Every API call is stateless. The frontend maintains a clean internal `gameLog` and reconstructs the full prompt for each role on every request. This prevents context contamination when using a single LLM for multiple roles.
+**Important:** Every API call is stateless. The frontend maintains a clean internal `gameLog` and reconstructs each prompt from local state. Prompt builders send the optional manual Story Summary plus only the most recent 12 `gameLog` entries as scene history, while the full log remains available for display, search, undo, and save export. This prevents context contamination when using a single LLM for multiple roles while keeping long-session prompts smaller.
 
 ---
 
@@ -227,6 +227,10 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
   - Character Name inputs (User + AI)
 - **Scenario Goal**
   - Editable textarea for the current objective / conflict. Lives in `state.scenario.scenario_goal` and is injected into GM prompts when present.
+- **Memory**
+  - Session Notes are a user scratchpad and persist locally/saves.
+  - Story Summary is an editable long-term memory block injected into GM and AI prompts before recent scene history.
+  - Update Summary calls the GM endpoint to merge older history outside the latest 12-entry context window into Story Summary.
 - **Import / Export**
   - Import Character Card (file picker)
   - Import Scenario (file picker)
@@ -281,6 +285,7 @@ const state = {
   lastRoll: null,
   pendingAction: null, // null or { user: { name, action, roll, rollMeta }, ai: { name, action, roll, rollMeta } }
   sessionNotes: '',
+  storySummary: '',
   logDensity: 'story',
   logSearch: '',
   sidebarCollapsed: false,
@@ -290,6 +295,8 @@ const state = {
 ```
 
 No external state management library is used. Everything is vanilla JS.
+
+Prompt context uses `CONTEXT_HISTORY_LIMIT = 12`; change that constant to adjust how many recent `gameLog` entries are sent to the GM and AI prompts.
 
 ---
 

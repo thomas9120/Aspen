@@ -1367,6 +1367,12 @@
   </div>
 
   <div class="section">
+    <h2>Story Summary</h2>
+    <textarea id="storySummary" rows="6" placeholder="Long-term continuity to send before recent scene history..."></textarea>
+    <button class="secondary" id="updateSummaryBtn" onclick="updateStorySummary()">Update Summary</button>
+  </div>
+
+  <div class="section">
     <h2>Quick Start</h2>
     <div id="quickStartSamples" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
   </div>
@@ -1528,6 +1534,7 @@ const state = {
   lastRoll: null,
   pendingAction: null,
   sessionNotes: '',
+  storySummary: '',
   logDensity: 'story',
   logSearch: '',
   sidebarCollapsed: false,
@@ -1536,6 +1543,7 @@ const state = {
 };
 
 const DEFAULT_SETTINGS = { ...state.settings };
+const CONTEXT_HISTORY_LIMIT = 12;
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
@@ -1575,6 +1583,7 @@ const statusText = $('statusText');
 const statusDot = $('statusDot');
 const goalEl = $('scenarioGoal');
 const notesEl = $('sessionNotes');
+const storySummaryEl = $('storySummary');
 const logSearchEl = $('logSearch');
 const topbarSearchEl = $('topbarSearch');
 const searchToggleBtn = $('searchToggleBtn');
@@ -1629,6 +1638,7 @@ function saveSettings() {
     state.scenario.scenario_goal = goal;
   }
   state.sessionNotes = notesEl?.value || '';
+  state.storySummary = storySummaryEl?.value || '';
   persistSettings();
 }
 
@@ -1663,6 +1673,7 @@ function loadSettingsUI() {
   $('aiModifier').value = settings.aiModifier;
   goalEl.value = state.scenario?.scenario_goal || '';
   if (notesEl) notesEl.value = state.sessionNotes || '';
+  if (storySummaryEl) storySummaryEl.value = state.storySummary || '';
   applyLogDensity();
   toggleDual();
   syncSwitchAria();
@@ -1676,6 +1687,7 @@ function persistSettings() {
       userCard: state.userCard,
       aiCard: state.aiCard,
       sessionNotes: state.sessionNotes,
+      storySummary: state.storySummary,
       logDensity: state.logDensity,
       sidebarCollapsed: state.sidebarCollapsed,
       hudCollapsed: state.hudCollapsed
@@ -1704,6 +1716,7 @@ function restoreSettings() {
       state.aiCard = saved.aiCard;
     }
     state.sessionNotes = saved.sessionNotes || '';
+    state.storySummary = saved.storySummary || '';
     state.logDensity = saved.logDensity === 'compact' ? 'compact' : 'story';
     state.sidebarCollapsed = saved.sidebarCollapsed === true;
     state.hudCollapsed = saved.hudCollapsed === true;
@@ -1735,6 +1748,39 @@ async function testConnection() {
     showToast(`Connection failed: ${e.message}`, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Test Connection'; }
+  }
+}
+
+async function updateStorySummary() {
+  saveSettings();
+  const olderEntries = getSummarizableHistoryEntries();
+  if (olderEntries.length === 0) {
+    showToast(`Need more than ${CONTEXT_HISTORY_LIMIT} story entries before summarizing.`, 'warning');
+    return;
+  }
+  const btn = $('updateSummaryBtn');
+  const originalText = btn?.textContent || 'Update Summary';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+  }
+  setStatus('Updating story summary...');
+  try {
+    const summary = (await callLLM(buildStorySummaryPrompt(), 'gm')).trim();
+    if (!summary) throw new Error('Summary response was empty.');
+    state.storySummary = summary;
+    if (storySummaryEl) storySummaryEl.value = summary;
+    persistSettings();
+    showToast('Story summary updated.', 'success');
+    setStatus('Story summary updated.');
+  } catch (e) {
+    showToast(`Summary update failed: ${e.message}`, 'error');
+    setStatus('Summary update failed.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
   }
 }
 
@@ -1875,6 +1921,7 @@ function applyLogFilter() {
 
 function toggleStorySearch(forceOpen) {
   if (!topbarSearchEl || !logSearchEl) return;
+  const wasOpen = topbarSearchEl.classList.contains('open');
   const open = forceOpen === undefined ? !topbarSearchEl.classList.contains('open') : !!forceOpen;
   topbarSearchEl.classList.toggle('open', open);
   if (searchToggleBtn) {
@@ -1882,8 +1929,10 @@ function toggleStorySearch(forceOpen) {
     searchToggleBtn.classList.toggle('active', open);
   }
   if (open) {
-    logSearchEl.focus();
-    logSearchEl.select();
+    if (!wasOpen) {
+      logSearchEl.focus();
+      logSearchEl.select();
+    }
     return;
   }
   logSearchEl.value = '';
@@ -2330,11 +2379,34 @@ function showDice(roll, actor = 'd20') {
   }, 600);
 }
 
-function formatHistory() {
-  return state.gameLog.map(e => {
+function formatHistory(entries = state.gameLog) {
+  return entries.map(e => {
     const label = e.role === 'gm' ? 'GM' : e.role === 'user' ? state.settings.userName : state.settings.aiName;
     return `[${label}] ${e.content}`;
   }).join('\n\n');
+}
+
+function formatRecentHistory() {
+  return formatHistory(state.gameLog.slice(-CONTEXT_HISTORY_LIMIT));
+}
+
+function getSummarizableHistoryEntries() {
+  return state.gameLog.slice(0, Math.max(0, state.gameLog.length - CONTEXT_HISTORY_LIMIT));
+}
+
+function buildStorySummaryPrompt() {
+  const olderHistory = formatHistory(getSummarizableHistoryEntries());
+  const existingSummary = state.storySummary?.trim() || 'None yet.';
+  const scenarioGoal = state.scenario?.scenario_goal?.trim() || '';
+  let userContent = `[EXISTING STORY SUMMARY]\n${existingSummary}\n\n`;
+  if (scenarioGoal) {
+    userContent += `[SCENARIO GOAL]\n${scenarioGoal}\n\n`;
+  }
+  userContent += `[OLDER SCENE HISTORY TO MERGE]\n${olderHistory}\n\n[INSTRUCTION]\nSummarize the older scene history for future RPG continuity. Keep: major events, current location, active NPCs, unresolved clues, promises, injuries/status effects, inventory-relevant discoveries, relationship changes, tone, and scenario goal progress. Do not invent new events. Do not write dialogue for user characters. Use concise bullet points. Return only the updated story summary.`;
+  return [
+    { role: 'system', content: 'You maintain compact continuity memory for an ongoing tabletop RPG session. Preserve factual continuity and unresolved threads. Do not add new events.' },
+    { role: 'user', content: userContent }
+  ];
 }
 
 function getEndpoint(role) {
@@ -2386,10 +2458,11 @@ function buildGmNarrativePrompt() {
   const world = scenarioWorld || 'A fantasy world of mystery and adventure.';
   const userCard = state.userCard ? state.userCard.summary || '' : 'A brave adventurer.';
   const aiCard = state.aiCard ? state.aiCard.summary || '' : 'A cautious companion.';
-  const history = formatHistory();
+  const history = formatRecentHistory();
   const isFirstTurn = state.gameLog.length === 0;
   const startingScene = state.scenario?.starting_scene || '';
   const scenarioGoal = state.scenario?.scenario_goal || '';
+  const storySummary = state.storySummary?.trim() || '';
 
   let userContent = `[WORLD INFO]\n${world}\n\n[CHARACTERS]\n${s.userName} — ${userCard}\n${s.aiName} — ${aiCard}\n\n`;
   if (isFirstTurn && startingScene) {
@@ -2397,6 +2470,9 @@ function buildGmNarrativePrompt() {
   }
   if (scenarioGoal) {
     userContent += `[SCENARIO GOAL]\nThe central tension or objective right now is: ${scenarioGoal}\n\n`;
+  }
+  if (storySummary) {
+    userContent += `[STORY SO FAR]\n${storySummary}\n\n`;
   }
   userContent += `[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\n`;
   if (isFirstTurn) {
@@ -2417,22 +2493,26 @@ function formatRoundRoll(action) {
 }
 
 function buildRoundResolutionPrompt(round) {
-  const history = formatHistory();
+  const history = formatRecentHistory();
+  const storySummary = state.storySummary?.trim() || '';
   const userAction = round?.user || { name: state.settings.userName, action: 'Passes for now.', roll: null };
   const aiAction = round?.ai || { name: state.settings.aiName, action: 'Waits for the moment.', roll: null };
+  const memoryBlock = storySummary ? `[STORY SO FAR]\n${storySummary}\n\n` : '';
   return [
     { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, erotic, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome.` },
-    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[ROUND ACTIONS TO RESOLVE]\n${userAction.name}: ${userAction.action}\n${formatRoundRoll(userAction)}\n\n${aiAction.name}: ${aiAction.action}\n${formatRoundRoll(aiAction)}\n\n[INSTRUCTION]\nNarrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions or dialogue for the player characters beyond resolving what they already declared. Do not write dialogue for user characters.` }
+    { role: 'user', content: `${memoryBlock}[SCENE HISTORY]\n${history}\n\n[ROUND ACTIONS TO RESOLVE]\n${userAction.name}: ${userAction.action}\n${formatRoundRoll(userAction)}\n\n${aiAction.name}: ${aiAction.action}\n${formatRoundRoll(aiAction)}\n\n[INSTRUCTION]\nNarrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions or dialogue for the player characters beyond resolving what they already declared. Do not write dialogue for user characters.` }
   ];
 }
 
 function buildAiPrompt() {
   const s = state.settings;
   const personality = state.aiCard ? (state.aiCard.personality || '') : 'Pragmatic and curious.';
-  const history = formatHistory();
+  const history = formatRecentHistory();
+  const storySummary = state.storySummary?.trim() || '';
+  const memoryBlock = storySummary ? `[STORY SO FAR]\n${storySummary}\n\n` : '';
   return [
     { role: 'system', content: `You are roleplaying as ${s.aiName}. Personality: ${personality}. You are a PLAYER, not the GM. You only control your own character's thoughts, speech, and actions. You do NOT know anything the GM hasn't explicitly told you. You do NOT narrate the world.` },
-    { role: 'user', content: `[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\nThe user player has declared their action for this round, and the GM has not resolved it yet. Based ONLY on the scene history above, what does ${s.aiName} do or say for the same round? Respond with a single concise action or line of dialogue. Do not narrate the environment or other characters.` }
+    { role: 'user', content: `${memoryBlock}[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\nThe user player has declared their action for this round, and the GM has not resolved it yet. Based ONLY on the scene history above, what does ${s.aiName} do or say for the same round? Respond with a single concise action or line of dialogue. Do not narrate the environment or other characters.` }
   ];
 }
 
@@ -2777,6 +2857,7 @@ function importSave(input) {
     state.aiCard = data.ai_card || null;
     state.gameLog = data.game_log || [];
     state.sessionNotes = data.session_notes || data.sessionNotes || '';
+    state.storySummary = data.story_summary || data.storySummary || '';
     state.logDensity = data.log_density === 'compact' || data.logDensity === 'compact' ? 'compact' : state.logDensity;
     state.pendingAction = null;
     state.lastRoll = null;
@@ -2802,6 +2883,7 @@ function exportSave() {
     user_card: state.userCard,
     ai_card: state.aiCard,
     session_notes: state.sessionNotes,
+    story_summary: state.storySummary,
     game_log: state.gameLog
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2986,10 +3068,18 @@ function loadQuickStartSamples() {
 
 setupAutoResize(inputEl);
 setupAutoResize(notesEl);
+setupAutoResize(storySummaryEl);
 
 if (notesEl) {
   notesEl.addEventListener('input', () => {
     state.sessionNotes = notesEl.value;
+    persistSettings();
+  });
+}
+
+if (storySummaryEl) {
+  storySummaryEl.addEventListener('input', () => {
+    state.storySummary = storySummaryEl.value;
     persistSettings();
   });
 }
