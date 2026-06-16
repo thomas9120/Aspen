@@ -3,3 +3,4 @@ cards/*
 !cards/sample-character.json
 scenarios/*
 !scenarios/sample-scenario.json
+/.codegraph
