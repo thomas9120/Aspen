@@ -41,6 +41,7 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 7. Click **Start/Restart** to have the GM begin the scene.
 8. Type your action, click **Roll d20 & Send**, then let the AI player act.
 9. The GM will resolve both player actions together and continue the scenario.
+10. Use the story summary button to keep context manageable. This application is very context hungry!
 
 ![Aspen chat interface](docs/aspen_screenshot.jpg)
 
