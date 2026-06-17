@@ -222,6 +222,48 @@ test('manual story summary update leaves existing summary unchanged on failure',
   assert.deepEqual(toasts.at(-1), { message: 'Summary update failed: offline', type: 'error' });
 });
 
+test('clear story summary requires confirmation before clearing state and textarea', async () => {
+  const state = {
+    storySummary: '- Keep this until confirmed.'
+  };
+  const storySummaryEl = { value: '- Keep this until confirmed.' };
+  const toasts = [];
+  const statuses = [];
+  let persisted = 0;
+  let confirmResult = false;
+  const context = loadFunctions(['clearStorySummary'], {
+    state,
+    storySummaryEl,
+    async showConfirm() {
+      return confirmResult;
+    },
+    persistSettings() {
+      persisted++;
+    },
+    showToast(message, type) {
+      toasts.push({ message, type });
+    },
+    setStatus(message) {
+      statuses.push(message);
+    }
+  });
+
+  await context.clearStorySummary();
+
+  assert.equal(state.storySummary, '- Keep this until confirmed.');
+  assert.equal(storySummaryEl.value, '- Keep this until confirmed.');
+  assert.equal(persisted, 0);
+
+  confirmResult = true;
+  await context.clearStorySummary();
+
+  assert.equal(state.storySummary, '');
+  assert.equal(storySummaryEl.value, '');
+  assert.equal(persisted, 1);
+  assert.deepEqual(toasts.at(-1), { message: 'Story summary cleared.', type: 'success' });
+  assert.equal(statuses.at(-1), 'Story summary cleared.');
+});
+
 test('round resolution prompt includes both actors and adjusted roll metadata', () => {
   const state = {
     settings: {

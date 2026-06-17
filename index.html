@@ -1406,6 +1406,7 @@
     </div>
     <textarea id="storySummary" rows="6" placeholder="Long-term continuity to send before recent scene history..."></textarea>
     <button class="secondary" id="updateSummaryBtn" onclick="updateStorySummary()">Update Summary</button>
+    <button class="secondary" id="clearSummaryBtn" onclick="clearStorySummary()">Clear Summary</button>
   </div>
 
   <div class="section">
@@ -1836,6 +1837,21 @@ async function updateStorySummary() {
       btn.textContent = originalText;
     }
   }
+}
+
+async function clearStorySummary() {
+  const hasSummary = !!(state.storySummary?.trim() || storySummaryEl?.value?.trim());
+  if (!hasSummary) {
+    showToast('Story summary is already empty.', 'info');
+    return;
+  }
+  const confirmed = await showConfirm('Clear the Story Summary? This removes the long-term memory block from future prompts until you write or generate a new one.');
+  if (!confirmed) return;
+  state.storySummary = '';
+  if (storySummaryEl) storySummaryEl.value = '';
+  persistSettings();
+  showToast('Story summary cleared.', 'success');
+  setStatus('Story summary cleared.');
 }
 
 function showCardSummary(card, target) {
