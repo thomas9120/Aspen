@@ -155,6 +155,20 @@ Only after confirmation does Aspen roll for the AI and ask the GM to resolve bot
 
 ---
 
+## Manual GM Review
+
+Manual GM Review pauses before GM narration or round resolution is appended to the story log.
+
+The user can:
+
+- Edit the GM response.
+- Regenerate the GM response from the same prompt.
+- Confirm the response.
+
+For round resolution, player and AI rolls have already happened before the GM draft is reviewed. Regenerating the GM response does not reroll or change those pending player declarations.
+
+---
+
 ## Design Rules
 
 - Every API call is stateless; prompts are rebuilt from local state each time.

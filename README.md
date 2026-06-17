@@ -20,6 +20,7 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 - Quick Start samples and setup checklist to try the app immediately
 - Test Connection button to verify API setup
 - Manual AI Review mode for editing or regenerating AI player actions
+- Manual GM Review mode for editing or regenerating GM narration/resolution before it is added to the story
 - Round-based flow: GM sets the scene, user acts, AI acts, then GM resolves both actions together
 - Recent context window keeps LLM prompts focused on the latest 12 story entries while preserving the full visible/save history
 - Turn phase tracker showing GM Scene, Your Action, AI Action, and Resolution
@@ -122,6 +123,12 @@ When **Manual AI Review** is enabled:
 4. Aspen rolls for the AI and asks the GM to resolve the round.
 
 This is useful if you want more control over the AI companion's behavior.
+
+## Manual GM Review
+
+When **Manual GM Review** is enabled, Aspen pauses before adding GM narration or round resolution to the story log. You can edit the response, re-roll it from the same prompt, or confirm it.
+
+This is useful for steering tone, correcting continuity, or keeping the GM from overreaching before the text becomes part of the visible story.
 
 ## Project Files
 

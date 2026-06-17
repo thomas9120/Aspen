@@ -52,6 +52,10 @@ test('index page exposes the polished UI controls and serves image assets', asyn
   assert.match(html, /id="hudCollapseBtn"/);
   assert.match(html, /id="storySummary"/);
   assert.match(html, /id="updateSummaryBtn"/);
+  assert.match(html, /id="gmManualToggle"/);
+  assert.match(html, /Manual GM Review/);
+  assert.match(html, /id="gmReviewText"/);
+  assert.match(html, /Review GM Response/);
   assert.match(html, /Story Summary/);
   assert.match(html, /Update Summary/);
   assert.match(html, /id="turnTracker"/);
@@ -69,6 +73,8 @@ test('index page exposes the polished UI controls and serves image assets', asyn
   assert.match(script, /function applySidebarCollapse/);
   assert.match(script, /function applyHudCollapse/);
   assert.match(script, /function updateStorySummary/);
+  assert.match(script, /function confirmGmResponse/);
+  assert.match(script, /function regenerateGmReview/);
   assert.match(script, /story_summary/);
 });
 
