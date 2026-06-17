@@ -1043,7 +1043,8 @@
   }
   .input-actions { display: flex; flex-direction: column; gap: 0.35rem; }
 
-  #overlay {
+  #overlay,
+  #gmOverlay {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.75);
@@ -1055,7 +1056,8 @@
     opacity: 0;
     transition: opacity 0.25s ease;
   }
-  #overlay.show {
+  #overlay.show,
+  #gmOverlay.show {
     display: flex;
     opacity: 1;
     animation: overlayIn 0.25s ease;
@@ -1304,6 +1306,16 @@
     </div>
   </div>
 
+  <div class="section">
+    <div class="toggle">
+      <label for="gmManualToggle"><strong>Manual GM Review</strong></label>
+      <div class="switch">
+        <input type="checkbox" id="gmManualToggle">
+        <span class="slider"></span>
+      </div>
+    </div>
+  </div>
+
   <div class="section" id="samplerSection">
     <h2 class="collapsible-header" onclick="toggleCollapsible(this)">
       <span class="chevron">&#9660;</span> Sampler Settings
@@ -1394,6 +1406,7 @@
     </div>
     <textarea id="storySummary" rows="6" placeholder="Long-term continuity to send before recent scene history..."></textarea>
     <button class="secondary" id="updateSummaryBtn" onclick="updateStorySummary()">Update Summary</button>
+    <button class="secondary" id="clearSummaryBtn" onclick="clearStorySummary()">Clear Summary</button>
   </div>
 
   <div class="section">
@@ -1514,6 +1527,18 @@
   </div>
 </div>
 
+<div id="gmOverlay">
+  <div class="modal">
+    <h3>&#9876; Review GM Response</h3>
+    <label>The Game Master will narrate:</label>
+    <textarea id="gmReviewText" rows="8"></textarea>
+    <div class="modalActions">
+      <button class="secondary" onclick="regenerateGmReview()">Re-roll GM</button>
+      <button onclick="confirmGmResponse()">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <div id="confirmOverlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:150;">
   <div class="confirm-modal">
     <p id="confirmText"></p>
@@ -1537,6 +1562,7 @@ const state = {
     aiApiKey: '',
     aiModel: '',
     manualReview: false,
+    gmManualReview: false,
     temperature: 0.8,
     topP: 0.95,
     minP: 0.05,
@@ -1557,6 +1583,7 @@ const state = {
   turnPhase: 'idle',
   lastRoll: null,
   pendingAction: null,
+  gmReview: null,
   sessionNotes: '',
   storySummary: '',
   logDensity: 'story',
@@ -1603,6 +1630,8 @@ const diceValueEl = $('diceValue');
 const inputEl = $('userInput');
 const overlayEl = $('overlay');
 const aiReviewText = $('aiReviewText');
+const gmOverlayEl = $('gmOverlay');
+const gmReviewText = $('gmReviewText');
 const statusText = $('statusText');
 const statusDot = $('statusDot');
 const goalEl = $('scenarioGoal');
@@ -1644,6 +1673,7 @@ function saveSettings() {
   state.settings.aiApiKey = $('aiApiKey').value.trim();
   state.settings.aiModel = $('aiModel').value.trim();
   state.settings.manualReview = $('manualToggle').checked;
+  state.settings.gmManualReview = $('gmManualToggle').checked;
   state.settings.temperature = parseFloat($('samplerTemp').value);
   state.settings.topP = parseFloat($('samplerTopP').value);
   state.settings.minP = parseFloat($('samplerMinP').value);
@@ -1677,6 +1707,7 @@ function loadSettingsUI() {
   $('aiApiKey').value = settings.aiApiKey;
   $('aiModel').value = settings.aiModel;
   $('manualToggle').checked = settings.manualReview;
+  $('gmManualToggle').checked = settings.gmManualReview;
   $('samplerTemp').value = settings.temperature;
   $('samplerTempVal').value = settings.temperature;
   $('samplerTopP').value = settings.topP;
@@ -1808,6 +1839,21 @@ async function updateStorySummary() {
   }
 }
 
+async function clearStorySummary() {
+  const hasSummary = !!(state.storySummary?.trim() || storySummaryEl?.value?.trim());
+  if (!hasSummary) {
+    showToast('Story summary is already empty.', 'info');
+    return;
+  }
+  const confirmed = await showConfirm('Clear the Story Summary? This removes the long-term memory block from future prompts until you write or generate a new one.');
+  if (!confirmed) return;
+  state.storySummary = '';
+  if (storySummaryEl) storySummaryEl.value = '';
+  persistSettings();
+  showToast('Story summary cleared.', 'success');
+  setStatus('Story summary cleared.');
+}
+
 function showCardSummary(card, target) {
   const containerId = target === 'ai' ? 'aiCardSummary' : 'userCardSummary';
   const container = $(containerId);
@@ -1909,7 +1955,7 @@ function updatePendingRoundPanel() {
 function updateTurnTracker() {
   const steps = Array.from(document.querySelectorAll('#turnTracker .turn-step'));
   const order = ['gm', 'user', 'ai', 'resolution'];
-  const phase = state.turnPhase === 'ai_review' ? 'ai' : state.turnPhase;
+  const phase = state.turnPhase === 'ai_review' ? 'ai' : state.turnPhase === 'gm_review' ? 'gm' : state.turnPhase;
   const activeIndex = order.indexOf(phase);
   steps.forEach(step => {
     const idx = order.indexOf(step.dataset.phase);
@@ -2023,6 +2069,7 @@ function updatePhaseBadge() {
   const phases = {
     idle: { label: 'Idle', cls: '' },
     gm: { label: 'GM Narrating', cls: 'gm' },
+    gm_review: { label: 'Review GM', cls: 'gm' },
     user: { label: 'Your Turn', cls: 'user' },
     ai: { label: 'AI Deciding', cls: 'ai' },
     ai_review: { label: 'Review AI', cls: 'ai' },
@@ -2372,6 +2419,12 @@ function setModalBusy(busy) {
   });
 }
 
+function setGmModalBusy(busy) {
+  document.querySelectorAll('#gmOverlay button, #gmReviewText').forEach(el => {
+    el.disabled = busy;
+  });
+}
+
 function showTypingIndicator() {
   removeTypingIndicator();
   const indicator = document.createElement('div');
@@ -2548,22 +2601,49 @@ async function gmNarrative() {
   setBusy(true);
   setStatus('Game Master is narrating...');
   showTypingIndicator();
+  let reviewStarted = false;
   try {
     const prompt = buildGmNarrativePrompt();
     const text = await callLLM(prompt, 'gm');
     removeTypingIndicator();
+    if (state.settings.gmManualReview) {
+      reviewStarted = true;
+      startGmReview('narrative', text, prompt);
+      return;
+    }
     appendLog('gm', text);
-    state.turnPhase = 'user';
-    updatePhaseBadge();
-    inputEl.placeholder = `${state.settings.userName}, what do you do?`;
-    setStatus(`Waiting for ${state.settings.userName}...`);
+    finishGmNarrative();
   } catch (e) {
     removeTypingIndicator();
     appendLog('gm', `[Error generating narrative: ${e.message}]`);
     setStatus('Error — see log');
   } finally {
-    setBusy(false);
+    if (!reviewStarted) setBusy(false);
   }
+}
+
+function startGmReview(mode, text, prompt) {
+  state.gmReview = { mode, prompt };
+  state.turnPhase = 'gm_review';
+  updatePhaseBadge();
+  gmReviewText.value = text;
+  gmOverlayEl.classList.add('show');
+  setStatus('Review GM response...');
+}
+
+function finishGmNarrative() {
+  state.turnPhase = 'user';
+  updatePhaseBadge();
+  inputEl.placeholder = `${state.settings.userName}, what do you do?`;
+  setStatus(`Waiting for ${state.settings.userName}...`);
+}
+
+function finishGmResolution() {
+  state.pendingAction = null;
+  state.turnPhase = 'user';
+  updatePhaseBadge();
+  inputEl.placeholder = `${state.settings.userName}, what do you do?`;
+  setStatus(`Waiting for ${state.settings.userName}...`);
 }
 
 async function sendUserAction() {
@@ -2664,16 +2744,18 @@ async function resolveAiAction(action) {
   setBusy(true);
   setStatus('Resolving round...');
   showTypingIndicator();
+  let reviewStarted = false;
   try {
     const prompt = buildRoundResolutionPrompt(state.pendingAction);
     const outcome = await callLLM(prompt, 'gm');
     removeTypingIndicator();
+    if (state.settings.gmManualReview) {
+      reviewStarted = true;
+      startGmReview('resolution', outcome, prompt);
+      return;
+    }
     appendLog('gm', outcome);
-    state.pendingAction = null;
-    state.turnPhase = 'user';
-    updatePhaseBadge();
-    inputEl.placeholder = `${state.settings.userName}, what do you do?`;
-    setStatus(`Waiting for ${state.settings.userName}...`);
+    finishGmResolution();
   } catch (e) {
     removeTypingIndicator();
     appendLog('gm', `[Error resolving round: ${e.message}]`);
@@ -2683,7 +2765,46 @@ async function resolveAiAction(action) {
     updatePhaseBadge();
     inputEl.placeholder = `${state.settings.userName}, what do you do?`;
   } finally {
+    if (!reviewStarted) setBusy(false);
+  }
+}
+
+async function confirmGmResponse() {
+  if (gmReviewText.disabled) return;
+  const text = gmReviewText.value.trim();
+  if (!text || !state.gmReview) return;
+  const mode = state.gmReview.mode;
+  setGmModalBusy(true);
+  gmOverlayEl.classList.remove('show');
+  try {
+    appendLog('gm', text);
+    state.gmReview = null;
+    if (mode === 'resolution') {
+      finishGmResolution();
+    } else {
+      finishGmNarrative();
+    }
+  } catch (e) {
+    appendLog('gm', `[Error confirming GM response: ${e.message}]`);
+    setStatus('Error — see log');
+  } finally {
+    setGmModalBusy(false);
     setBusy(false);
+  }
+}
+
+async function regenerateGmReview() {
+  if (!state.gmReview?.prompt) return;
+  setGmModalBusy(true);
+  setStatus('Regenerating GM response...');
+  try {
+    const text = await callLLM(state.gmReview.prompt, 'gm');
+    gmReviewText.value = text;
+  } catch (e) {
+    gmReviewText.value = `[Error: ${e.message}]`;
+  } finally {
+    setGmModalBusy(false);
+    setStatus('Review GM response...');
   }
 }
 
@@ -2740,12 +2861,14 @@ async function skipTurn() {
 function restartGame() {
   saveSettings();
   overlayEl.classList.remove('show');
+  gmOverlayEl.classList.remove('show');
   removeTypingIndicator();
   state.gameLog = [];
   logEl.innerHTML = '';
   state.turnPhase = 'gm';
   updatePhaseBadge();
   state.pendingAction = null;
+  state.gmReview = null;
   state.lastRoll = null;
   state.rollHistory = [];
   diceValueEl.textContent = 'd20 = —';
@@ -2755,12 +2878,15 @@ function restartGame() {
 }
 
 function clearOutput() {
+  overlayEl.classList.remove('show');
+  gmOverlayEl.classList.remove('show');
   removeTypingIndicator();
   state.gameLog = [];
   logEl.innerHTML = '';
   state.turnPhase = 'idle';
   updatePhaseBadge();
   state.pendingAction = null;
+  state.gmReview = null;
   state.lastRoll = null;
   state.rollHistory = [];
   diceValueEl.textContent = 'd20 = —';
@@ -2794,6 +2920,7 @@ function normalizeSettings(raw) {
     aiApiKey: source.aiApiKey ?? source.ai_api_key ?? DEFAULT_SETTINGS.aiApiKey,
     aiModel: source.aiModel ?? source.ai_model ?? DEFAULT_SETTINGS.aiModel,
     manualReview: source.manualReview ?? (source.ai_auto_mode === undefined ? DEFAULT_SETTINGS.manualReview : !source.ai_auto_mode),
+    gmManualReview: source.gmManualReview ?? source.gm_manual_review ?? (source.gm_auto_mode === undefined ? DEFAULT_SETTINGS.gmManualReview : !source.gm_auto_mode),
     temperature: source.temperature ?? DEFAULT_SETTINGS.temperature,
     topP: source.topP ?? source.top_p ?? DEFAULT_SETTINGS.topP,
     minP: source.minP ?? source.min_p ?? DEFAULT_SETTINGS.minP,
@@ -2819,6 +2946,8 @@ function serializeSettings(settings) {
     ai_api_key: settings.aiApiKey,
     ai_model: settings.aiModel,
     ai_auto_mode: !settings.manualReview,
+    gm_auto_mode: !settings.gmManualReview,
+    gm_manual_review: settings.gmManualReview,
     temperature: settings.temperature,
     top_p: settings.topP,
     min_p: settings.minP,

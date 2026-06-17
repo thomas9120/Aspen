@@ -28,8 +28,9 @@ Because `index.html` is loaded via `file://` protocol, it cannot directly read t
 The game proceeds in discrete turns. Each full round consists of the following phases:
 
 1. **GM Phase (Narrative)**
-   - The GM LLM receives the world info, character summaries, and the full scene history.
+   - The GM LLM receives the world info, character summaries, Story Summary when present, and the recent scene history.
    - It narrates the current scene and sets the stage for player actions.
+   - If **Manual GM Review** is enabled, the UI pauses before adding the generated narration to the story log. The user can edit, regenerate, or confirm it.
 
 2. **User Player Phase**
    - The user types their character's action or dialogue.
@@ -44,8 +45,9 @@ The game proceeds in discrete turns. Each full round consists of the following p
    - The action text + roll result are added to the scene log as the AI player's pending round declaration.
 
 4. **GM Resolution Phase**
-   - The GM LLM receives the full scene history plus both player declarations and roll results for the round.
+   - The GM LLM receives recent scene history plus both player declarations and roll results for the round.
    - It resolves both actions together in whatever order makes sense for the scene.
+   - If **Manual GM Review** is enabled, the UI pauses before adding the resolution to the story log. Regenerating the GM response does not reroll or change the pending player declarations.
    - It moves the scenario forward and opens the next player choice.
 
 5. **Loop**
@@ -197,6 +199,8 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
     "ai_api_key": "",
     "ai_model": "",
     "ai_auto_mode": true,
+    "gm_auto_mode": true,
+    "gm_manual_review": false,
     "temperature": 0.8,
     "top_p": 0.95,
     "min_p": 0.05,
@@ -259,6 +263,12 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
 - **Confirm Roll** button
 - **Re-roll Action** button (regenerate from LLM)
 
+### GM Review Modal (appears when Manual GM Review is ON)
+- Shows generated GM narration or round resolution before it is appended to the story log
+- Editable text area
+- **Confirm** button
+- **Re-roll GM** button (regenerate from the same prompt)
+
 ---
 
 ## State Management
@@ -269,6 +279,8 @@ All application state lives in a single JavaScript object:
 const state = {
   settings: {
     ...,
+    manualReview: false,
+    gmManualReview: false,
     temperature: 0.8,
     topP: 0.95,
     minP: 0.05,
@@ -281,9 +293,10 @@ const state = {
   userCard: null,
   aiCard: null,
   gameLog: [],
-  turnPhase: 'gm', // 'gm' | 'user' | 'ai' | 'ai_review' | 'resolution'
+  turnPhase: 'gm', // 'gm' | 'gm_review' | 'user' | 'ai' | 'ai_review' | 'resolution'
   lastRoll: null,
   pendingAction: null, // null or { user: { name, action, roll, rollMeta }, ai: { name, action, roll, rollMeta } }
+  gmReview: null,
   sessionNotes: '',
   storySummary: '',
   logDensity: 'story',

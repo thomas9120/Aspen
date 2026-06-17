@@ -15,6 +15,7 @@ const defaultSettings = {
   aiApiKey: '',
   aiModel: '',
   manualReview: false,
+  gmManualReview: false,
   temperature: 0.8,
   topP: 0.95,
   minP: 0.05,
@@ -88,6 +89,7 @@ test('settings normalize from old save keys and serialize back to save schema', 
     ai_api_key: 'ai-key',
     ai_model: 'companion-model',
     ai_auto_mode: false,
+    gm_auto_mode: false,
     temperature: 0.65,
     top_p: 0.9,
     min_p: 0,
@@ -105,6 +107,7 @@ test('settings normalize from old save keys and serialize back to save schema', 
   assert.equal(normalized.apiUrl, 'http://localhost:5001/v1');
   assert.equal(normalized.dualLlM, true);
   assert.equal(normalized.manualReview, true);
+  assert.equal(normalized.gmManualReview, true);
   assert.equal(normalized.repeatPenalty, 1);
   assert.equal(normalized.userName, 'Arin');
   assert.equal(normalized.aiName, 'Elara');
@@ -115,6 +118,8 @@ test('settings normalize from old save keys and serialize back to save schema', 
   assert.equal(serialized.api_url, 'http://localhost:5001/v1');
   assert.equal(serialized.dual_llm_enabled, true);
   assert.equal(serialized.ai_auto_mode, false);
+  assert.equal(serialized.gm_auto_mode, false);
+  assert.equal(serialized.gm_manual_review, true);
   assert.equal(serialized.repetition_penalty, 1);
   assert.equal(serialized.user_handicap, true);
   assert.equal(serialized.ai_modifier, -4);
