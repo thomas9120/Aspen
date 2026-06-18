@@ -42,6 +42,60 @@ test('GM narrative prompt forbids writing user character dialogue', () => {
   assert.match(prompt[1].content, /Do not write dialogue for user characters/);
 });
 
+test('GM narrative prompt frames the GM as fair and non-adversarial', () => {
+  const state = {
+    settings: {
+      userName: 'Arin',
+      aiName: 'Elara'
+    },
+    scenario: null,
+    userCard: null,
+    aiCard: null,
+    gameLog: [
+      { role: 'gm', content: 'The bridge groans in the rain.' },
+      { role: 'user', content: 'I test the ropes before crossing. [Roll: 18]' },
+      { role: 'ai', content: 'I watch for movement below. [Roll: 15]' }
+    ]
+  };
+  const context = loadFunctions(['formatHistory', 'formatRecentHistory', 'buildGmNarrativePrompt'], {
+    state,
+    CONTEXT_HISTORY_LIMIT: 12
+  });
+
+  const prompt = context.buildGmNarrativePrompt();
+
+  assert.match(prompt[0].content, /not an adversary trying to defeat the players/);
+  assert.match(prompt[0].content, /fun, fair, dramatic, and responsive tabletop RPG experience/);
+  assert.match(prompt[0].content, /do not make the scenario increasingly unwinnable/);
+  assert.match(prompt[0].content, /Let the players win scenes/);
+  assert.match(prompt[1].content, /Balance tension with reward/);
+  assert.match(prompt[1].content, /let victories, clever choices, and earned advantages breathe/);
+});
+
+test('formatted history hides raw roll and handicap details from prompts', () => {
+  const state = {
+    settings: {
+      userName: 'Arin',
+      aiName: 'Elara'
+    },
+    gameLog: [
+      { role: 'user', content: 'I force the lock. [Roll: 12 (raw 15, -3)]' },
+      { role: 'ai', content: 'I hold the lantern. [Roll: 20 (raw 1, +19)]' }
+    ]
+  };
+  const context = loadFunctions(['formatHistory'], {
+    state
+  });
+
+  const history = context.formatHistory();
+
+  assert.match(history, /I force the lock\. \[Roll: 12\]/);
+  assert.match(history, /I hold the lantern\. \[Roll: 20\]/);
+  assert.doesNotMatch(history, /raw/);
+  assert.doesNotMatch(history, /[+-]19/);
+  assert.doesNotMatch(history, /-3/);
+});
+
 test('GM narrative prompt includes only the newest 12 history entries in order', () => {
   const state = {
     settings: {
@@ -300,10 +354,52 @@ test('round resolution prompt includes both actors and adjusted roll metadata', 
   assert.match(prompt[0].content, /Dice Roll Scale/);
   assert.equal(prompt[1].role, 'user');
   assert.match(prompt[1].content, /\[ROUND ACTIONS TO RESOLVE\]/);
-  assert.match(prompt[1].content, /Arin: I force the lock\.\nRoll: 12 \(raw 15, -3\)/);
+  assert.match(prompt[1].content, /Arin: I force the lock\.\nRoll: 12/);
+  assert.doesNotMatch(prompt[1].content, /raw 15, -3/);
   assert.match(prompt[1].content, /Elara: I watch the hallway\.\nRoll: 18/);
   assert.match(prompt[1].content, /Narrate the direct outcome of both declared actions/);
   assert.match(prompt[1].content, /Do not write dialogue for user characters/);
+});
+
+test('round resolution prompt respects successful rolls and proportional consequences', () => {
+  const state = {
+    settings: {
+      userName: 'Arin',
+      aiName: 'Elara'
+    },
+    gameLog: [
+      { role: 'gm', content: 'A locked iron gate blocks the archive stairs.' }
+    ]
+  };
+  const round = {
+    user: {
+      name: 'Arin',
+      action: 'I pick the lock carefully.',
+      roll: 20,
+      rollMeta: 'Roll: 20'
+    },
+    ai: {
+      name: 'Elara',
+      action: 'I keep watch.',
+      roll: 15,
+      rollMeta: 'Roll: 15'
+    }
+  };
+  const context = loadFunctions(['formatHistory', 'formatRecentHistory', 'buildRoundResolutionPrompt', 'formatRoundRoll'], {
+    state,
+    CONTEXT_HISTORY_LIMIT: 12
+  });
+
+  const prompt = context.buildRoundResolutionPrompt(round);
+
+  assert.match(prompt[0].content, /not an adversary trying to defeat the players/);
+  assert.match(prompt[0].content, /Respect player agency and dice results/);
+  assert.match(prompt[0].content, /high or successful rolls should produce meaningful progress/);
+  assert.match(prompt[0].content, /Do not cancel out a strong roll/);
+  assert.match(prompt[0].content, /consequences should be proportional/);
+  assert.match(prompt[1].content, /Treat the dice rolls as authoritative guidance/);
+  assert.match(prompt[1].content, /Avoid making every outcome a setback/);
+  assert.match(prompt[1].content, /Balance tension with reward/);
 });
 
 test('round resolution trims old history but keeps pending round actions', () => {

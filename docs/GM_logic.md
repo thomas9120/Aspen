@@ -94,8 +94,11 @@ Used when the GM frames or refreshes the scene.
 
 The GM should:
 
+- Act as a fair facilitator, not an adversary trying to defeat the players.
 - Describe what has changed since the last turn.
 - Keep the Scenario Goal alive when present.
+- Balance tension with reward; do not escalate every turn.
+- Let victories, clever choices, and earned advantages breathe.
 - Match the current tone.
 - Offer a clear next opening for player choice.
 - Never write actions or dialogue for player characters.
@@ -118,8 +121,12 @@ Used after both player declarations and rolls are known.
 
 The GM should:
 
+- Act as a fair facilitator, not an adversary trying to defeat the players.
 - Resolve both declared actions.
-- Use each d20 roll to determine that character's outcome quality.
+- Use each final adjusted d20 roll to determine that character's outcome quality.
+- Respect successful rolls by producing meaningful progress, advantage, safety, discovery, leverage, avoided danger, or partial/complete success.
+- Avoid canceling a strong roll with an equal or worse immediate setback.
+- Keep failed-roll consequences proportional and rooted in the established fiction.
 - Pick the order of resolution that makes sense for the scene.
 - Move the scenario forward by one meaningful beat.
 - Keep calm scenes calm and dramatic scenes dramatic.
@@ -175,6 +182,7 @@ For round resolution, player and AI rolls have already happened before the GM dr
 - `gameLog` remains the source of visible history.
 - GM and AI prompts receive Story Summary plus a recent context window, not the full saved/displayed log.
 - `pendingAction` is temporary and should not be exported as part of save history.
+- Handicap math is internal; visible story text and GM prompts should show only the final adjusted roll.
 - The GM resolves rounds, not isolated player actions.
 - The AI player acts before knowing the GM's outcome for the user's action.
 - Prompt changes should preserve tone control so calm roleplay does not become artificially stressful.

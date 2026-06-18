@@ -21,6 +21,7 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 - Test Connection button to verify API setup
 - Manual AI Review mode for editing or regenerating AI player actions
 - Manual GM Review mode for editing or regenerating GM narration/resolution before it is added to the story
+- Fair-GM prompt guidance that rewards strong rolls, avoids adversarial escalation, and keeps consequences proportional
 - Round-based flow: GM sets the scene, user acts, AI acts, then GM resolves both actions together
 - Recent context window keeps LLM prompts focused on the latest 12 story entries while preserving the full visible/save history
 - Turn phase tracker showing GM Scene, Your Action, AI Action, and Resolution
@@ -28,7 +29,7 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 - Character presence cards and pending round summary
 - Story search, Story/Compact density toggle, and recent roll history
 - Action starter chips for common tabletop actions
-- Optional d20 modifiers from `-19` to `+19` for the user and AI player
+- Optional d20 modifiers from `-19` to `+19` for the user and AI player; chat output and GM prompts show only the final adjusted roll
 - Undo Round and Re-roll GM controls
 
 ## Quick Start
@@ -76,6 +77,8 @@ GM scene -> User action + roll -> AI action + roll -> GM resolves both -> next u
 The GM does not resolve the user action immediately. Instead, Aspen waits for the AI player to declare an action too, then sends both actions and rolls to the GM in one round-resolution prompt.
 
 This keeps the AI player involved in the same scene beat and avoids having the GM skip over them.
+
+GM prompts tell the model to act as a fair facilitator rather than an adversary. Strong rolls should create meaningful progress or advantage, while complications should be proportional and rooted in the established fiction.
 
 To keep long sessions lighter, Aspen sends an optional Story Summary plus only the latest 12 story log entries to GM and AI prompts. Use **Update Summary** to merge older history into the summary. The full story remains visible in the app and is still included in exported saves.
 
