@@ -2235,9 +2235,7 @@ function renderEntry(role, text, meta, index, edited) {
     const rollMatch = meta.match(/Roll: (\d+)(?:\s*\(raw (\d+),\s*([+-]\d+)\))?/);
     if (rollMatch) {
       const roll = parseInt(rollMatch[1]);
-      const raw = rollMatch[2] ? parseInt(rollMatch[2]) : null;
-      const mod = rollMatch[3] ? rollMatch[3] : null;
-      const label = raw !== null ? `Roll: ${roll} (raw ${raw}, ${mod})` : `Roll: ${roll}`;
+      const label = `Roll: ${roll}`;
       metaHtml = ` <span class="tag ${getRollClass(roll)}">&#127922; ${escapeHtml(label)}</span>`;
     } else {
       metaHtml = ` <span class="tag">${escapeHtml(meta)}</span>`;
@@ -2459,7 +2457,8 @@ function showDice(roll, actor = 'd20') {
 function formatHistory(entries = state.gameLog) {
   return entries.map(e => {
     const label = e.role === 'gm' ? 'GM' : e.role === 'user' ? state.settings.userName : state.settings.aiName;
-    return `[${label}] ${e.content}`;
+    const content = (e.content || '').replace(/\[Roll: (\d+)\s*\(raw \d+,\s*[+-]\d+\)\]/g, '[Roll: $1]');
+    return `[${label}] ${content}`;
   }).join('\n\n');
 }
 
@@ -2553,20 +2552,20 @@ function buildGmNarrativePrompt() {
   }
   userContent += `[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\n`;
   if (isFirstTurn) {
-    userContent += `Set the opening scene using the Starting Scene provided above. Introduce the situation vividly, establish the current tone, and end by setting the stage for both players to declare their first actions. Do not write actions or dialogue for the player characters. Do not write dialogue for user characters.`;
+    userContent += `Set the opening scene using the Starting Scene provided above. Introduce the situation vividly, establish the current tone, and end by setting the stage for both players to declare their first actions. Create an inviting situation with clear opportunities, not an unwinnable trap. Do not write actions or dialogue for the player characters. Do not write dialogue for user characters.`;
   } else {
-    userContent += `Describe what has changed since the last turn and frame the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. Move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice. Do not write actions or dialogue for the player characters. Do not write dialogue for user characters.`;
+    userContent += `Describe what has changed since the last turn and frame the current scene vividly. Keep the Scenario Goal alive in the narrative if one is provided. Move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Balance tension with reward: do not escalate every turn, and let victories, clever choices, and earned advantages breathe. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice. Do not write actions or dialogue for the player characters. Do not write dialogue for user characters.`;
   }
 
   return [
-    { role: 'system', content: `You are the Game Master (GM) of a tabletop RPG and an active guide for the scenario. You describe the world, control NPCs, set the scene, and keep momentum toward the Scenario Goal when one exists. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous. Introduce meaningful developments such as new information, NPC responses, environmental changes, emotional beats, choices, opportunities, or natural consequences. Do NOT control the player characters. Do not write dialogue for user characters. Be vivid and concise.` },
+    { role: 'system', content: `You are the Game Master (GM) of a tabletop RPG and an active guide for the scenario. You are not an adversary trying to defeat the players; your goal is to create a fun, fair, dramatic, and responsive tabletop RPG experience. You describe the world, control NPCs, set the scene, and keep momentum toward the Scenario Goal when one exists. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous. Introduce meaningful developments such as new information, NPC responses, environmental changes, emotional beats, choices, opportunities, or natural consequences. Introduce complications only when they follow naturally from the scene, failed or partial rolls, player choices, or established threats; do not make the scenario increasingly unwinnable unless the user clearly chose that tone. Let the players win scenes, solve problems, gain ground, and feel competent when their choices support it. Do NOT control the player characters. Do not write dialogue for user characters. Be vivid and concise.` },
     { role: 'user', content: userContent }
   ];
 }
 
 function formatRoundRoll(action) {
   if (!action || action.roll === null || action.roll === undefined) return 'No roll';
-  return action.rollMeta || `Roll: ${action.roll}`;
+  return (action.rollMeta || `Roll: ${action.roll}`).replace(/Roll: (\d+)\s*\(raw \d+,\s*[+-]\d+\)/, 'Roll: $1');
 }
 
 function buildRoundResolutionPrompt(round) {
@@ -2576,8 +2575,8 @@ function buildRoundResolutionPrompt(round) {
   const aiAction = round?.ai || { name: state.settings.aiName, action: 'Waits for the moment.', roll: null };
   const memoryBlock = storySummary ? `[STORY SO FAR]\n${storySummary}\n\n` : '';
   return [
-    { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, erotic, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome.` },
-    { role: 'user', content: `${memoryBlock}[SCENE HISTORY]\n${history}\n\n[ROUND ACTIONS TO RESOLVE]\n${userAction.name}: ${userAction.action}\n${formatRoundRoll(userAction)}\n\n${aiAction.name}: ${aiAction.action}\n${formatRoundRoll(aiAction)}\n\n[INSTRUCTION]\nNarrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions or dialogue for the player characters beyond resolving what they already declared. Do not write dialogue for user characters.` }
+    { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. You are not an adversary trying to defeat the players; your goal is to create a fun, fair, dramatic, and responsive tabletop RPG experience. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, erotic, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome. Respect player agency and dice results: high or successful rolls should produce meaningful progress, advantage, safety, discovery, leverage, avoided danger, or partial/complete success. Do not cancel out a strong roll by immediately adding an equal or worse setback. Failed rolls may introduce complications, costs, danger, or hard choices, but consequences should be proportional and rooted in the established fiction.` },
+    { role: 'user', content: `${memoryBlock}[SCENE HISTORY]\n${history}\n\n[ROUND ACTIONS TO RESOLVE]\n${userAction.name}: ${userAction.action}\n${formatRoundRoll(userAction)}\n\n${aiAction.name}: ${aiAction.action}\n${formatRoundRoll(aiAction)}\n\n[INSTRUCTION]\nNarrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. Treat the dice rolls as authoritative guidance for outcome quality: high rolls should improve the situation, while low rolls may worsen it. Avoid making every outcome a setback. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Balance tension with reward: do not escalate every turn, and let victories, clever choices, and earned advantages breathe. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions or dialogue for the player characters beyond resolving what they already declared. Do not write dialogue for user characters.` }
   ];
 }
 
@@ -2657,7 +2656,7 @@ async function sendUserAction() {
   const rawRoll = rollD20();
   const result = applyHandicap(rawRoll, true);
   showDice(result.final, state.settings.userName);
-  const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
+  const rollMeta = `Roll: ${result.final}`;
   appendLog('user', `${text} [${rollMeta}]`);
   state.pendingAction = {
     user: {
@@ -2725,7 +2724,7 @@ async function resolveAiAction(action) {
   const rawRoll = rollD20();
   const result = applyHandicap(rawRoll, false);
   showDice(result.final, state.settings.aiName);
-  const rollMeta = result.modified ? `Roll: ${result.final} (raw ${result.raw}, ${result.mod >= 0 ? '+' : ''}${result.mod})` : `Roll: ${rawRoll}`;
+  const rollMeta = `Roll: ${result.final}`;
   appendLog('ai', `${action} [${rollMeta}]`);
   if (!state.pendingAction?.user) {
     state.pendingAction = {
@@ -3085,7 +3084,7 @@ function renderLog() {
   logEl.innerHTML = '';
   state.gameLog.forEach((e, i) => {
     const metaMatch = e.content.match(/\[Roll: (\d+)(?:\s*\(raw (\d+),\s*([+-]\d+)\))?\]/);
-    const meta = metaMatch ? (metaMatch[2] ? `Roll: ${metaMatch[1]} (raw ${metaMatch[2]}, ${metaMatch[3]})` : `Roll: ${metaMatch[1]}`) : '';
+    const meta = metaMatch ? `Roll: ${metaMatch[1]}` : '';
     const text = e.content.replace(/ \[Roll: \d+(?: \(raw \d+, [+-]\d+\))?\]/, '');
     renderEntry(e.role, text, meta, i, e.edited === true);
   });
