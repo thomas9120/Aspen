@@ -122,6 +122,10 @@ Personality: {ai_personality}.
 You are a PLAYER, not the GM. You only control your own character's thoughts, speech, and actions.
 You do NOT know anything the GM hasn't explicitly told you. You do NOT narrate the world.
 
+[VOICE EXAMPLES] (optional — included when the AI character card has first_message/example_dialogue; {{user}}/{{char}} placeholders are replaced with the configured names)
+Style reference for how {ai_name} speaks (do not repeat verbatim):
+{first_message_and_example_dialogue}
+
 [SCENE HISTORY]
 {formatted_history}
 
@@ -188,10 +192,12 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
 ```
 
 ### Save Game JSON
+`api_key` and `ai_api_key` are always exported blank so shared save files never leak credentials; importing a save with blank keys keeps the locally stored keys. `summarized_through` records how much of `game_log` is already merged into the story summary.
 ```json
 {
   "format": "aspen-save-v1",
   "exported_at": "2026-05-12T12:00:00Z",
+  "summarized_through": 0,
   "settings": {
     "api_url": "http://localhost:8080/v1",
     "api_key": "",
@@ -229,14 +235,14 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
   - Preset dropdown: llama.cpp / koboldcpp / Custom
   - Dual-LLM toggle (reveals second API block)
   - AI Player: Auto / Manual toggle
-  - **Sampler Settings** (collapsible): Temperature, Top-P, Min-P, Top-K, Repeat Penalty, Max Tokens — each with a range slider and number input, synced bidirectionally. Parameters with a "disabled" value show a hint (e.g., "0 = off" for Min-P, "1.0 = off" for Repeat Penalty). Map directly to the API request body. Top-K is omitted from the request when set to 0.
+  - **Sampler Settings** (collapsible): Temperature, Top-P, Min-P, Top-K, Repeat Penalty, Max Tokens — each with a range slider and number input, synced bidirectionally. Parameters with a "disabled" value show a hint (e.g., "0 = off" for Min-P, "1.0 = off" for Repeat Penalty). Map directly to the API request body. Samplers at their "off" values are omitted from the request for compatibility with strict OpenAI-style APIs: Top-K at 0, Min-P at 0, and Repeat Penalty at 1.0.
   - Character Name inputs (User + AI)
 - **Scenario Goal**
   - Editable textarea for the current objective / conflict. Lives in `state.scenario.scenario_goal` and is injected into GM prompts when present.
 - **Memory**
   - Session Notes are a user scratchpad and persist locally/saves.
   - Story Summary is an editable long-term memory block injected into GM and AI prompts before recent scene history.
-  - Update Summary calls the GM endpoint to merge older history outside the latest 12-entry context window into Story Summary.
+  - Update Summary calls the GM endpoint to merge older history outside the latest 12-entry context window into Story Summary. Entries already merged are tracked with `state.summarizedThrough`, so repeated updates only send history that has not been summarized yet (kept in sync by undo, restart, clear, save export/import).
 - **Import / Export**
   - Import Character Card (file picker)
   - Import Scenario (file picker)
@@ -264,12 +270,14 @@ When importing a `.json` with `data.name`, `data.description`, `data.personality
 - Editable text area
 - **Confirm Roll** button
 - **Re-roll Action** button (regenerate from LLM)
+- **Escape** cancels the review and fully unwinds the round: the user's pending declaration is removed from the log and its text is returned to the input box
 
 ### GM Review Modal (appears when Manual GM Review is ON)
 - Shows generated GM narration or round resolution before it is appended to the story log
 - Editable text area
 - **Confirm** button
 - **Re-roll GM** button (regenerate from the same prompt)
+- Escape does not dismiss this modal; the response must be confirmed or re-rolled so the round stays coherent
 
 ---
 
@@ -301,6 +309,7 @@ const state = {
   gmReview: null,
   sessionNotes: '',
   storySummary: '',
+  summarizedThrough: 0, // gameLog index already merged into storySummary
   logDensity: 'story',
   logSearch: '',
   sidebarCollapsed: false,
@@ -318,7 +327,7 @@ Prompt context uses `CONTEXT_HISTORY_LIMIT = 12`; change that constant to adjust
 ## Development Notes
 
 - **No build step.** Edit `index.html` directly.
-- **No external CDN dependencies.** All CSS and JS are inline.
+- **No external JS dependencies.** All CSS and JS are inline. The only remote asset is an optional Google Fonts stylesheet (Crimson Text) for GM narration styling; it degrades gracefully offline.
 - **Testing:** Run `node --test "tests/*.test.js"` for dependency-free regression tests. Open `index.html` in a browser for manual UI/API checks. If testing API calls, a local CORS-enabled server (like llama.cpp or koboldcpp) must be running.
 - **Documentation:** Any architectural changes must be reflected in this `AGENTS.md` file.
 

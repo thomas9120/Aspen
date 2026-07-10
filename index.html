@@ -1586,6 +1586,7 @@ const state = {
   gmReview: null,
   sessionNotes: '',
   storySummary: '',
+  summarizedThrough: 0,
   logDensity: 'story',
   logSearch: '',
   sidebarCollapsed: false,
@@ -1595,6 +1596,17 @@ const state = {
 
 const DEFAULT_SETTINGS = { ...state.settings };
 const CONTEXT_HISTORY_LIMIT = 12;
+const LLM_TIMEOUT_MS = 120000;
+
+let llmBusy = false;
+
+function guardBusy() {
+  if (llmBusy) {
+    showToast('Please wait — a request is still in progress.', 'warning');
+    return true;
+  }
+  return false;
+}
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
@@ -1743,6 +1755,8 @@ function persistSettings() {
       aiCard: state.aiCard,
       sessionNotes: state.sessionNotes,
       storySummary: state.storySummary,
+      summarizedThrough: state.summarizedThrough,
+      gameLog: state.gameLog,
       logDensity: state.logDensity,
       sidebarCollapsed: state.sidebarCollapsed,
       hudCollapsed: state.hudCollapsed
@@ -1772,6 +1786,8 @@ function restoreSettings() {
     }
     state.sessionNotes = saved.sessionNotes || '';
     state.storySummary = saved.storySummary || '';
+    state.gameLog = Array.isArray(saved.gameLog) ? saved.gameLog : [];
+    state.summarizedThrough = Math.min(saved.summarizedThrough || 0, state.gameLog.length);
     state.logDensity = saved.logDensity === 'compact' ? 'compact' : 'story';
     state.sidebarCollapsed = saved.sidebarCollapsed === true;
     state.hudCollapsed = saved.hudCollapsed === true;
@@ -1807,12 +1823,14 @@ async function testConnection() {
 }
 
 async function updateStorySummary() {
+  if (guardBusy()) return;
   saveSettings();
   const olderEntries = getSummarizableHistoryEntries();
   if (olderEntries.length === 0) {
-    showToast(`Need more than ${CONTEXT_HISTORY_LIMIT} story entries before summarizing.`, 'warning');
+    showToast(`Need more than ${CONTEXT_HISTORY_LIMIT} unsummarized story entries before summarizing.`, 'warning');
     return;
   }
+  const summarizedBoundary = Math.max(0, state.gameLog.length - CONTEXT_HISTORY_LIMIT);
   const btn = $('updateSummaryBtn');
   const originalText = btn?.textContent || 'Update Summary';
   if (btn) {
@@ -1824,6 +1842,7 @@ async function updateStorySummary() {
     const summary = (await callLLM(buildStorySummaryPrompt(), 'gm')).trim();
     if (!summary) throw new Error('Summary response was empty.');
     state.storySummary = summary;
+    state.summarizedThrough = summarizedBoundary;
     if (storySummaryEl) storySummaryEl.value = summary;
     persistSettings();
     showToast('Story summary updated.', 'success');
@@ -1840,6 +1859,7 @@ async function updateStorySummary() {
 }
 
 async function clearStorySummary() {
+  if (guardBusy()) return;
   const hasSummary = !!(state.storySummary?.trim() || storySummaryEl?.value?.trim());
   if (!hasSummary) {
     showToast('Story summary is already empty.', 'info');
@@ -1848,6 +1868,7 @@ async function clearStorySummary() {
   const confirmed = await showConfirm('Clear the Story Summary? This removes the long-term memory block from future prompts until you write or generate a new one.');
   if (!confirmed) return;
   state.storySummary = '';
+  state.summarizedThrough = 0;
   if (storySummaryEl) storySummaryEl.value = '';
   persistSettings();
   showToast('Story summary cleared.', 'success');
@@ -2182,6 +2203,7 @@ function toggleCollapsible(header) {
 
 function syncSamplerNumber(slider, targetId) {
   $(targetId).value = slider.value;
+  saveSettings();
 }
 
 function syncSamplerSlider(numInput, targetId) {
@@ -2195,6 +2217,7 @@ function syncSamplerSlider(numInput, targetId) {
   } else {
     numInput.value = $(targetId).value;
   }
+  saveSettings();
 }
 
 function rollD20() {
@@ -2229,7 +2252,7 @@ function renderEntry(role, text, meta, index, edited) {
   if (index !== undefined && index !== null) div.dataset.logIndex = index;
   const roleLabel = role === 'gm' ? 'Game Master' : role === 'user' ? state.settings.userName : state.settings.aiName;
   div.dataset.searchText = `${role} ${roleLabel || ''} ${text || ''} ${meta || ''}`;
-  const roleIcon = role === 'gm' ? '&#9876;' : role === 'user' ? '&#9876;' : '&#10024;';
+  const roleIcon = role === 'gm' ? '&#9876;' : role === 'user' ? '&#128737;' : '&#10024;';
   let metaHtml = '';
   if (meta) {
     const rollMatch = meta.match(/Roll: (\d+)(?:\s*\(raw (\d+),\s*([+-]\d+)\))?/);
@@ -2253,9 +2276,11 @@ function renderEntry(role, text, meta, index, edited) {
 
 function appendLog(role, text, meta) {
   state.gameLog.push({ role, content: text });
-  renderEntry(role, text, meta, state.gameLog.length - 1, false);
+  const displayText = meta ? stripRollText(text) : text;
+  renderEntry(role, displayText, meta, state.gameLog.length - 1, false);
   updateCharacterPresence();
   updateSetupChecklist();
+  persistSettings();
 }
 
 function escapeHtml(s) {
@@ -2368,6 +2393,7 @@ function saveEditEntry(index) {
   editingState.index = null;
   updateCharacterPresence();
   applyLogFilter();
+  persistSettings();
   logEl.scrollTop = logEl.scrollHeight;
 }
 
@@ -2467,7 +2493,9 @@ function formatRecentHistory() {
 }
 
 function getSummarizableHistoryEntries() {
-  return state.gameLog.slice(0, Math.max(0, state.gameLog.length - CONTEXT_HISTORY_LIMIT));
+  const start = Math.max(0, state.summarizedThrough || 0);
+  const end = Math.max(0, state.gameLog.length - CONTEXT_HISTORY_LIMIT);
+  return end > start ? state.gameLog.slice(start, end) : [];
 }
 
 function buildStorySummaryPrompt() {
@@ -2504,25 +2532,39 @@ async function callLLM(messages, role) {
     messages,
     temperature: state.settings.temperature,
     top_p: state.settings.topP,
-    min_p: state.settings.minP,
-    repetition_penalty: state.settings.repeatPenalty,
     max_tokens: state.settings.maxTokens
   };
+  if (state.settings.minP > 0) body.min_p = state.settings.minP;
+  if (state.settings.repeatPenalty > 1) body.repetition_penalty = state.settings.repeatPenalty;
   if (state.settings.topK > 0) body.top_k = state.settings.topK;
-  const res = await fetch(`${ep.url.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(ep.key ? { 'Authorization': `Bearer ${ep.key}` } : {})
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`API error ${res.status}: ${txt}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+  llmBusy = true;
+  try {
+    const res = await fetch(`${ep.url.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ep.key ? { 'Authorization': `Bearer ${ep.key}` } : {})
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`API error ${res.status}: ${txt}`);
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || '';
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new Error(`Request timed out after ${LLM_TIMEOUT_MS / 1000} seconds.`);
+    }
+    throw e;
+  } finally {
+    llmBusy = false;
+    clearTimeout(timer);
   }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
 function buildGmNarrativePrompt() {
@@ -2568,6 +2610,32 @@ function formatRoundRoll(action) {
   return (action.rollMeta || `Roll: ${action.roll}`).replace(/Roll: (\d+)\s*\(raw \d+,\s*[+-]\d+\)/, 'Roll: $1');
 }
 
+function parseDeclaration(entry, name) {
+  const rollMatch = (entry.content || '').match(/\[Roll: (\d+)/);
+  return {
+    name,
+    action: stripRollText(entry.content),
+    roll: rollMatch ? parseInt(rollMatch[1]) : null,
+    rollMeta: rollMatch ? `Roll: ${rollMatch[1]}` : 'No roll'
+  };
+}
+
+function getUnresolvedRound() {
+  const log = state.gameLog;
+  const last = log[log.length - 1];
+  const prev = log[log.length - 2];
+  if (last?.role === 'ai' && prev?.role === 'user') {
+    return {
+      user: parseDeclaration(prev, state.settings.userName),
+      ai: parseDeclaration(last, state.settings.aiName)
+    };
+  }
+  if (last?.role === 'user') {
+    return { user: parseDeclaration(last, state.settings.userName), ai: null };
+  }
+  return null;
+}
+
 function buildRoundResolutionPrompt(round) {
   const history = formatRecentHistory();
   const storySummary = state.storySummary?.trim() || '';
@@ -2575,7 +2643,7 @@ function buildRoundResolutionPrompt(round) {
   const aiAction = round?.ai || { name: state.settings.aiName, action: 'Waits for the moment.', roll: null };
   const memoryBlock = storySummary ? `[STORY SO FAR]\n${storySummary}\n\n` : '';
   return [
-    { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. You are not an adversary trying to defeat the players; your goal is to create a fun, fair, dramatic, and responsive tabletop RPG experience. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, erotic, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome. Respect player agency and dice results: high or successful rolls should produce meaningful progress, advantage, safety, discovery, leverage, avoided danger, or partial/complete success. Do not cancel out a strong roll by immediately adding an equal or worse setback. Failed rolls may introduce complications, costs, danger, or hard choices, but consequences should be proportional and rooted in the established fiction.` },
+    { role: 'system', content: `You are the Game Master. Resolve the current round based on the scene history, both player declarations, and their dice rolls. You are not an adversary trying to defeat the players; your goal is to create a fun, fair, dramatic, and responsive tabletop RPG experience. Preserve the scene's current tone, whether calm, dramatic, comedic, mysterious, or dangerous.\n\nDice Roll Scale: 1 = catastrophic failure, 5 = bad failure, 10 = partial success with complication, 15 = solid success, 20 = perfect/critical success. Use each roll value to determine the quality of that character's outcome. Respect player agency and dice results: high or successful rolls should produce meaningful progress, advantage, safety, discovery, leverage, avoided danger, or partial/complete success. Do not cancel out a strong roll by immediately adding an equal or worse setback. Failed rolls may introduce complications, costs, danger, or hard choices, but consequences should be proportional and rooted in the established fiction.` },
     { role: 'user', content: `${memoryBlock}[SCENE HISTORY]\n${history}\n\n[ROUND ACTIONS TO RESOLVE]\n${userAction.name}: ${userAction.action}\n${formatRoundRoll(userAction)}\n\n${aiAction.name}: ${aiAction.action}\n${formatRoundRoll(aiAction)}\n\n[INSTRUCTION]\nNarrate the direct outcome of both declared actions in an order that makes sense for the scene. Treat these as the players' decisions for this round; do not ask for more input before resolving them. Treat the dice rolls as authoritative guidance for outcome quality: high rolls should improve the situation, while low rolls may worsen it. Avoid making every outcome a setback. After resolving the round, always move the scenario forward by at least one meaningful beat: reveal new information, show an NPC response, shift the mood, change the environment, offer an opportunity, introduce a natural consequence, or bring the Scenario Goal closer or farther away. Balance tension with reward: do not escalate every turn, and let victories, clever choices, and earned advantages breathe. Match the scene's current tone; calm scenes can remain calm. End with a clear next opening for player choice, such as a question, opportunity, reaction, clue, invitation, complication, or changed circumstance. Do not merely describe the aftermath and wait. Do not write new actions or dialogue for the player characters beyond resolving what they already declared. Do not write dialogue for user characters.` }
   ];
 }
@@ -2586,8 +2654,19 @@ function buildAiPrompt() {
   const history = formatRecentHistory();
   const storySummary = state.storySummary?.trim() || '';
   const memoryBlock = storySummary ? `[STORY SO FAR]\n${storySummary}\n\n` : '';
+  const examples = [];
+  if (state.aiCard?.first_message) examples.push(state.aiCard.first_message);
+  const exampleDialogue = state.aiCard?.example_dialogue;
+  if (Array.isArray(exampleDialogue)) {
+    examples.push(...exampleDialogue.filter(x => typeof x === 'string' && x.trim()));
+  } else if (typeof exampleDialogue === 'string' && exampleDialogue.trim()) {
+    examples.push(exampleDialogue.trim());
+  }
+  const voiceBlock = examples.length
+    ? `\n\n[VOICE EXAMPLES]\nStyle reference for how ${s.aiName} speaks (do not repeat verbatim):\n${examples.join('\n').split('{{user}}').join(s.userName).split('{{char}}').join(s.aiName)}`
+    : '';
   return [
-    { role: 'system', content: `You are roleplaying as ${s.aiName}. Personality: ${personality}. You are a PLAYER, not the GM. You only control your own character's thoughts, speech, and actions. You do NOT know anything the GM hasn't explicitly told you. You do NOT narrate the world.` },
+    { role: 'system', content: `You are roleplaying as ${s.aiName}. Personality: ${personality}. You are a PLAYER, not the GM. You only control your own character's thoughts, speech, and actions. You do NOT know anything the GM hasn't explicitly told you. You do NOT narrate the world.${voiceBlock}` },
     { role: 'user', content: `${memoryBlock}[SCENE HISTORY]\n${history}\n\n[INSTRUCTION]\nThe user player has declared their action for this round, and the GM has not resolved it yet. Based ONLY on the scene history above, what does ${s.aiName} do or say for the same round? Respond with a single concise action or line of dialogue. Do not narrate the environment or other characters.` }
   ];
 }
@@ -2646,6 +2725,7 @@ function finishGmResolution() {
 }
 
 async function sendUserAction() {
+  if (llmBusy) return;
   saveSettings();
   const text = inputEl.value.trim();
   if (!text) return;
@@ -2657,7 +2737,7 @@ async function sendUserAction() {
   const result = applyHandicap(rawRoll, true);
   showDice(result.final, state.settings.userName);
   const rollMeta = `Roll: ${result.final}`;
-  appendLog('user', `${text} [${rollMeta}]`);
+  appendLog('user', `${text} [${rollMeta}]`, rollMeta);
   state.pendingAction = {
     user: {
       name: state.settings.userName,
@@ -2725,7 +2805,7 @@ async function resolveAiAction(action) {
   const result = applyHandicap(rawRoll, false);
   showDice(result.final, state.settings.aiName);
   const rollMeta = `Roll: ${result.final}`;
-  appendLog('ai', `${action} [${rollMeta}]`);
+  appendLog('ai', `${action} [${rollMeta}]`, rollMeta);
   if (!state.pendingAction?.user) {
     state.pendingAction = {
       user: { name: state.settings.userName, action: 'Passes for now.', roll: null, rollMeta: 'No roll' },
@@ -2740,6 +2820,12 @@ async function resolveAiAction(action) {
   };
   delete state.pendingAction.aiDraft;
   updatePendingRoundPanel();
+  await resolvePendingRound();
+}
+
+async function resolvePendingRound() {
+  state.turnPhase = 'resolution';
+  updatePhaseBadge();
   setBusy(true);
   setStatus('Resolving round...');
   showTypingIndicator();
@@ -2818,6 +2904,29 @@ async function confirmAiAction() {
   finally { setModalBusy(false); }
 }
 
+function cancelAiReview() {
+  if (!overlayEl.classList.contains('show')) return;
+  if (llmBusy) return;
+  overlayEl.classList.remove('show');
+  const round = state.pendingAction;
+  // Fully unwind the round: remove the user's pending declaration from the
+  // log and hand their action text back to the input box.
+  if (round?.user && state.gameLog.length && state.gameLog[state.gameLog.length - 1].role === 'user') {
+    state.gameLog.pop();
+    if (round.user.action && round.user.action !== 'Passes for now.' && !inputEl.value.trim()) {
+      inputEl.value = round.user.action;
+    }
+    renderLog();
+  }
+  state.pendingAction = null;
+  state.turnPhase = 'user';
+  setBusy(false);
+  updateAllUi();
+  inputEl.placeholder = `${state.settings.userName}, what do you do?`;
+  setStatus(`Round canceled. Waiting for ${state.settings.userName}...`);
+  showToast('AI review canceled — the round was undone.', 'info');
+}
+
 async function regenerateAiAction() {
   setModalBusy(true);
   setStatus(`Regenerating ${state.settings.aiName}'s action...`);
@@ -2837,6 +2946,7 @@ async function regenerateAiAction() {
 }
 
 async function skipTurn() {
+  if (llmBusy) return;
   if (state.turnPhase === 'user') {
     saveSettings();
     const passText = 'Passes for now.';
@@ -2858,11 +2968,13 @@ async function skipTurn() {
 }
 
 function restartGame() {
+  if (guardBusy()) return;
   saveSettings();
   overlayEl.classList.remove('show');
   gmOverlayEl.classList.remove('show');
   removeTypingIndicator();
   state.gameLog = [];
+  state.summarizedThrough = 0;
   logEl.innerHTML = '';
   state.turnPhase = 'gm';
   updatePhaseBadge();
@@ -2873,14 +2985,17 @@ function restartGame() {
   diceValueEl.textContent = 'd20 = —';
   diceChipEl.className = 'dice-chip';
   updateAllUi();
+  persistSettings();
   gmNarrative();
 }
 
 function clearOutput() {
+  if (guardBusy()) return;
   overlayEl.classList.remove('show');
   gmOverlayEl.classList.remove('show');
   removeTypingIndicator();
   state.gameLog = [];
+  state.summarizedThrough = 0;
   logEl.innerHTML = '';
   state.turnPhase = 'idle';
   updatePhaseBadge();
@@ -2891,6 +3006,7 @@ function clearOutput() {
   diceValueEl.textContent = 'd20 = —';
   diceChipEl.className = 'dice-chip';
   updateAllUi();
+  persistSettings();
   setStatus('Output cleared. Press Start/Restart to begin a new session.');
   showWelcome();
 }
@@ -3001,15 +3117,21 @@ function importScenario(input) {
 }
 
 function importSave(input) {
-  readJsonFile(input, data => {
+  readJsonFile(input, async data => {
     if (data.format !== 'aspen-save-v1') { showToast('Unrecognized save format.', 'error'); return; }
+    if (guardBusy()) return;
+    const localApiKey = state.settings.apiKey;
+    const localAiApiKey = state.settings.aiApiKey;
     state.settings = normalizeSettings(data.settings);
+    if (!state.settings.apiKey) state.settings.apiKey = localApiKey;
+    if (!state.settings.aiApiKey) state.settings.aiApiKey = localAiApiKey;
     state.scenario = data.scenario || null;
     state.userCard = data.user_card || null;
     state.aiCard = data.ai_card || null;
     state.gameLog = data.game_log || [];
     state.sessionNotes = data.session_notes || data.sessionNotes || '';
     state.storySummary = data.story_summary || data.storySummary || '';
+    state.summarizedThrough = Math.min(data.summarized_through || 0, state.gameLog.length);
     state.logDensity = data.log_density === 'compact' || data.logDensity === 'compact' ? 'compact' : state.logDensity;
     state.pendingAction = null;
     state.lastRoll = null;
@@ -3022,7 +3144,35 @@ function importSave(input) {
     if (state.userCard) showCardSummary(state.userCard, 'user');
     if (state.aiCard) showCardSummary(state.aiCard, 'ai');
     if (state.scenario) showScenarioSummary(state.scenario);
+    await maybeResumeImportedRound();
   });
+}
+
+async function maybeResumeImportedRound() {
+  const round = getUnresolvedRound();
+  if (!round) return;
+  if (!state.settings.apiUrl) {
+    showToast('This save ends mid-round. Configure the API, then resolve it with a new action or Undo Round.', 'warning');
+    return;
+  }
+  const resume = await showConfirm('This save ends mid-round: declared actions have no GM resolution yet. Resolve the round now?');
+  if (!resume) {
+    showToast('Unresolved declarations kept. Use Undo Round to remove them, or keep playing.', 'info');
+    return;
+  }
+  state.pendingAction = round;
+  if (round.ai) {
+    await resolvePendingRound();
+  } else {
+    state.turnPhase = 'ai';
+    updatePhaseBadge();
+    try {
+      await aiTurn();
+    } catch (e) {
+      appendLog('gm', `[Error during AI turn: ${e.message}]`);
+      setStatus('Error — see log');
+    }
+  }
 }
 
 function exportSave() {
@@ -3030,12 +3180,13 @@ function exportSave() {
   const payload = {
     format: 'aspen-save-v1',
     exported_at: new Date().toISOString(),
-    settings: serializeSettings(state.settings),
+    settings: { ...serializeSettings(state.settings), api_key: '', ai_api_key: '' },
     scenario: state.scenario,
     user_card: state.userCard,
     ai_card: state.aiCard,
     session_notes: state.sessionNotes,
     story_summary: state.storySummary,
+    summarized_through: state.summarizedThrough,
     game_log: state.gameLog
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -3044,6 +3195,7 @@ function exportSave() {
   a.download = `aspen-save-${Date.now()}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
+  showToast('Save exported. API keys are not included in save files.', 'success');
 }
 
 function normalizeCharacterCard(data) {
@@ -3058,7 +3210,7 @@ function normalizeCharacterCard(data) {
   }
   if (data.data) {
     const d = data.data;
-    if (d.name && d.description) {
+    if (d.name && (d.description || d.personality || d.summary)) {
       return {
         name: d.name,
         summary: d.description || '',
@@ -3089,9 +3241,11 @@ function renderLog() {
     renderEntry(e.role, text, meta, i, e.edited === true);
   });
   updateAllUi();
+  persistSettings();
 }
 
 function undoLastRound() {
+  if (guardBusy()) return;
   if (state.gameLog.length === 0) {
     showToast('Nothing to undo.', 'warning');
     return;
@@ -3110,6 +3264,7 @@ function undoLastRound() {
     return;
   }
   log.splice(-removeCount, removeCount);
+  state.summarizedThrough = Math.min(state.summarizedThrough, log.length);
   state.pendingAction = null;
   state.turnPhase = log.length === 0 ? 'idle' : 'user';
   renderLog();
@@ -3126,6 +3281,7 @@ function undoLastRound() {
 }
 
 async function regenerateGmResponse() {
+  if (guardBusy()) return;
   if (state.gameLog.length === 0) return;
   if (state.turnPhase !== 'user' && state.turnPhase !== 'idle') {
     showToast('Can only regenerate GM response during your turn or when idle.', 'warning');
@@ -3140,18 +3296,25 @@ async function regenerateGmResponse() {
   setBusy(true);
   setStatus('Regenerating GM response...');
   showTypingIndicator();
+  const removedEntry = state.gameLog.pop();
   try {
-    state.gameLog.pop();
-    const prompt = buildGmNarrativePrompt();
+    // If the removed GM entry resolved a round, regenerate with the
+    // resolution prompt (dice scale + declared actions), not the narrative one.
+    const unresolvedRound = getUnresolvedRound();
+    const prompt = unresolvedRound
+      ? buildRoundResolutionPrompt(unresolvedRound)
+      : buildGmNarrativePrompt();
     const text = await callLLM(prompt, 'gm');
     removeTypingIndicator();
-    appendLog('gm', text);
+    state.gameLog.push({ role: 'gm', content: text });
+    renderLog();
     setStatus(`Waiting for ${state.settings.userName}...`);
     showToast('GM response regenerated.', 'success');
   } catch (e) {
     removeTypingIndicator();
-    appendLog('gm', `[Error regenerating: ${e.message}]`);
+    state.gameLog.push(removedEntry);
     setStatus('Error — see log');
+    showToast(`Regeneration failed: ${e.message}`, 'error');
   } finally {
     setBusy(false);
   }
@@ -3251,10 +3414,20 @@ if (logSearchEl) {
   });
 }
 
-['apiUrl', 'userName', 'aiName', 'scenarioGoal'].forEach(id => {
+['apiUrl', 'apiKey', 'model', 'aiApiUrl', 'aiApiKey', 'aiModel', 'userName', 'aiName',
+ 'userModifier', 'aiModifier', 'scenarioGoal'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('input', () => {
+    saveSettings();
+    updateAllUi();
+  });
+});
+
+['manualToggle', 'gmManualToggle', 'userHandicap', 'aiHandicap'].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('change', () => {
     saveSettings();
     updateAllUi();
   });
@@ -3267,11 +3440,10 @@ document.addEventListener('keydown', e => {
       return;
     }
     if (overlayEl.classList.contains('show')) {
-      overlayEl.classList.remove('show');
-      setBusy(false);
-      state.turnPhase = 'user';
-      updatePhaseBadge();
+      cancelAiReview();
     }
+    // The GM review modal is intentionally not dismissable with Escape:
+    // the response must be confirmed or re-rolled so the round stays coherent.
   }
 });
 
@@ -3282,6 +3454,12 @@ loadQuickStartSamples();
 if (state.userCard) showCardSummary(state.userCard, 'user');
 if (state.aiCard) showCardSummary(state.aiCard, 'ai');
 if (state.scenario) showScenarioSummary(state.scenario);
+if (state.gameLog.length) {
+  state.turnPhase = 'user';
+  renderLog();
+  inputEl.placeholder = `${state.settings.userName}, what do you do?`;
+  setStatus(`Session restored. Waiting for ${state.settings.userName}...`);
+}
 updateAllUi();
 </script>
 </body>

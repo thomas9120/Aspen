@@ -15,7 +15,7 @@ Aspen is designed to be portable: open the HTML file in a browser, point it at a
 - Session notes scratchpad for clues, NPCs, promises, and reminders
 - Editable Story Summary memory with manual update from older history
 - Save export/import, including session notes and story summary
-- Settings and UI preferences auto-saved to localStorage (persists across refreshes)
+- Settings, UI preferences, and the story log auto-saved to localStorage (sessions survive refreshes)
 - Toast notifications (non-blocking feedback for all operations)
 - Quick Start samples and setup checklist to try the app immediately
 - Test Connection button to verify API setup
@@ -111,8 +111,9 @@ See [CREATE_SCENARIO.md](docs/CREATE_SCENARIO.md) for the scenario format.
 
 ## Saving and Loading
 
-- **Export Save** downloads the current settings, scenario, character cards, session notes, story summary, and game log as JSON.
-- **Import Save** restores a previous session.
+- **Export Save** downloads the current settings, scenario, character cards, session notes, story summary, and game log as JSON. API keys are never included in exported saves, so they are safe to share.
+- **Import Save** restores a previous session (your locally stored API keys are kept). If the save ends mid-round, Aspen offers to resolve the round immediately.
+- The story log also persists in localStorage, so refreshing the page resumes the current session automatically.
 
 Because the app runs from a local HTML file, imports use normal browser file pickers. Aspen does not directly read folders from disk.
 
@@ -160,7 +161,7 @@ Aspen/
 - The main app is plain HTML, CSS, and JavaScript.
 - Edit `index.html` directly.
 - Run dependency-free tests with `node --test "tests/*.test.js"`.
-- Settings are auto-persisted to `localStorage` under the key `aspen_session`.
+- Settings, scenario, cards, story summary, and the game log are auto-persisted to `localStorage` under the key `aspen_session`.
 - If you change prompt architecture or turn sequencing, update `AGENTS.md` and `docs/GM_logic.md`.
 - If testing API calls, make sure your local backend allows browser requests from a `file://` page or use a local static server.
 

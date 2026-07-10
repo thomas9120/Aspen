@@ -487,6 +487,19 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
         let generatedCard = null;
         let characterImage = null;
 
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // Card fields live under "data" (Character Card V2); older flat cards keep them at top level
+        function getCardData() {
+            return (generatedCard && generatedCard.data) || generatedCard || {};
+        }
+
         // DOM Elements
         const form = document.getElementById('characterForm');
         const generateBtn = document.getElementById('generateBtn');
@@ -534,7 +547,7 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
                 .map(t => t.trim())
                 .filter(t => t.length > 0);
 
-            generatedCard = {
+            const data = {
                 name: fields.name.value.trim(),
                 description: fields.description.value.trim(),
                 personality: fields.personality.value.trim(),
@@ -544,22 +557,27 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
                 creator_notes: fields.notes.value.trim(),
                 system_prompt: fields.system.value.trim(),
                 tags: tags,
+                created_date: new Date().toISOString()
+            };
+
+            // Remove empty fields
+            Object.keys(data).forEach(key => {
+                if (data[key] === '' || (Array.isArray(data[key]) && data[key].length === 0)) {
+                    delete data[key];
+                }
+            });
+
+            // Character Card V2 spec nests card fields under "data"
+            generatedCard = {
                 spec: 'chara_card_v2',
                 spec_version: '2.0',
-                created_date: new Date().toISOString()
+                data: data
             };
 
             // Add character image as base64 if available
             if (characterImage) {
                 generatedCard.char_image = characterImage;
             }
-
-            // Remove empty fields
-            Object.keys(generatedCard).forEach(key => {
-                if (generatedCard[key] === '' || (Array.isArray(generatedCard[key]) && generatedCard[key].length === 0)) {
-                    delete generatedCard[key];
-                }
-            });
 
             updatePreview();
             showToast('Character card generated!', 'success');
@@ -579,25 +597,24 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
                 return;
             }
 
-            let content = '';
+            const card = getCardData();
+            let text = '';
             if (currentTab === 'json') {
-                content = `<pre>${JSON.stringify(generatedCard, null, 2)}</pre>`;
+                text = JSON.stringify(generatedCard, null, 2);
             } else {
                 // Plain text format
-                content = '<pre>';
-                if (generatedCard.name) content += `Name: ${generatedCard.name}\n\n`;
-                if (generatedCard.description) content += `Description:\n${generatedCard.description}\n\n`;
-                if (generatedCard.personality) content += `Personality:\n${generatedCard.personality}\n\n`;
-                if (generatedCard.scenario) content += `Scenario:\n${generatedCard.scenario}\n\n`;
-                if (generatedCard.first_mes) content += `First Message:\n${generatedCard.first_mes}\n\n`;
-                if (generatedCard.mes_example) content += `Example Dialogue:\n${generatedCard.mes_example}\n\n`;
-                if (generatedCard.creator_notes) content += `Creator Notes:\n${generatedCard.creator_notes}\n\n`;
-                if (generatedCard.system_prompt) content += `System Prompt:\n${generatedCard.system_prompt}\n\n`;
-                if (generatedCard.tags && generatedCard.tags.length > 0) content += `Tags: ${generatedCard.tags.join(', ')}`;
-                content += '</pre>';
+                if (card.name) text += `Name: ${card.name}\n\n`;
+                if (card.description) text += `Description:\n${card.description}\n\n`;
+                if (card.personality) text += `Personality:\n${card.personality}\n\n`;
+                if (card.scenario) text += `Scenario:\n${card.scenario}\n\n`;
+                if (card.first_mes) text += `First Message:\n${card.first_mes}\n\n`;
+                if (card.mes_example) text += `Example Dialogue:\n${card.mes_example}\n\n`;
+                if (card.creator_notes) text += `Creator Notes:\n${card.creator_notes}\n\n`;
+                if (card.system_prompt) text += `System Prompt:\n${card.system_prompt}\n\n`;
+                if (card.tags && card.tags.length > 0) text += `Tags: ${card.tags.join(', ')}`;
             }
 
-            previewContent.innerHTML = content;
+            previewContent.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
         }
 
         // Copy to clipboard
@@ -626,7 +643,7 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
                 return;
             }
 
-            const filename = `${generatedCard.name || 'character'}_card.json`;
+            const filename = `${getCardData().name || 'character'}_card.json`;
             const blob = new Blob([JSON.stringify(generatedCard, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -643,6 +660,8 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
+                    // Support both V2 cards (fields under "data") and flat legacy cards
+                    const src = data.data || data;
 
                     const fieldMap = {
                         name: 'name',
@@ -657,15 +676,15 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
 
                     Object.keys(fieldMap).forEach(jsonKey => {
                         const formKey = fieldMap[jsonKey];
-                        if (data[jsonKey] !== undefined && data[jsonKey] !== null) {
-                            fields[formKey].value = typeof data[jsonKey] === 'string' ? data[jsonKey] : JSON.stringify(data[jsonKey]);
+                        if (src[jsonKey] !== undefined && src[jsonKey] !== null) {
+                            fields[formKey].value = typeof src[jsonKey] === 'string' ? src[jsonKey] : JSON.stringify(src[jsonKey]);
                         } else {
                             fields[formKey].value = '';
                         }
                     });
 
-                    if (data.tags) {
-                        const tags = Array.isArray(data.tags) ? data.tags : [];
+                    if (src.tags) {
+                        const tags = Array.isArray(src.tags) ? src.tags : [];
                         fields.tags.value = tags.join(', ');
                     } else {
                         fields.tags.value = '';
@@ -696,7 +715,7 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
 
                     generatedCard = data;
                     updatePreview();
-                    showToast(`Loaded: ${data.name || 'character'}`, 'success');
+                    showToast(`Loaded: ${src.name || 'character'}`, 'success');
                 } catch (err) {
                     showToast('Failed to parse JSON file', 'error');
                 }
@@ -791,143 +810,6 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
                 handleImageUpload(e.dataTransfer.files[0]);
             }
         });
-
-        // Draw PNG character card
-        function drawCharacterCard() {
-            const canvas = pngCanvas;
-            const ctx = canvas.getContext('2d');
-
-            const cardWidth = 512;
-            const cardHeight = 800;
-            canvas.width = cardWidth;
-            canvas.height = cardHeight;
-
-            // Background gradient
-            const bgGrad = ctx.createLinearGradient(0, 0, 0, cardHeight);
-            bgGrad.addColorStop(0, '#1a1a2e');
-            bgGrad.addColorStop(1, '#16213e');
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, cardWidth, cardHeight);
-
-            // Border
-            ctx.strokeStyle = '#2a2a4e';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(8, 8, cardWidth - 16, cardHeight - 16);
-
-            // Red accent line at top
-            ctx.fillStyle = '#e94560';
-            ctx.fillRect(8, 8, cardWidth - 16, 3);
-
-            // Top section: Character image + name
-            const imageSectionHeight = 280;
-            const imageX = 36;
-            const imageY = 30;
-            const imageW = cardWidth - 72;
-            const imageH = 200;
-
-            // Image background
-            ctx.fillStyle = '#0f3460';
-            ctx.fillRect(imageX, imageY, imageW, imageH);
-
-            // Draw character image if available
-            let imgObj = null;
-            if (characterImage) {
-                imgObj = new Image();
-                imgObj.src = characterImage;
-                // Draw image after it loads
-                imgObj.onload = function() {
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(imageX, imageY, imageW, imageH);
-                    ctx.clip();
-                    ctx.drawImage(imgObj, imageX, imageY, imageW, imageH);
-                    ctx.restore();
-                    drawTextContent(ctx, cardWidth, cardHeight);
-                };
-            }
-
-            // Draw image border
-            ctx.strokeStyle = '#2a2a4e';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(imageX, imageY, imageW, imageH);
-
-            // Character name
-            const name = generatedCard.name || 'Character Name';
-            ctx.fillStyle = '#e94560';
-            ctx.font = 'bold 28px Segoe UI, sans-serif';
-            ctx.textBaseline = 'top';
-
-            // Word wrap name if needed
-            const nameY = imageY + imageH + 15;
-            const nameX = 36;
-            const nameMaxWidth = cardWidth - 72;
-            wrapText(ctx, name, nameX, nameY, nameMaxWidth, 34, '#e94560', 'bold 28px Segoe UI, sans-serif');
-
-            // Divider line
-            const dividerY = nameY + 45;
-            ctx.strokeStyle = '#2a2a4e';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(36, dividerY);
-            ctx.lineTo(cardWidth - 36, dividerY);
-            ctx.stroke();
-
-            // Store dividerY for text section
-            drawTextContent(ctx, cardWidth, cardHeight, dividerY + 10);
-
-            // If image is not loaded yet, draw without it first then overlay
-            if (!characterImage && imgObj) {
-                drawTextContent(ctx, cardWidth, cardHeight, dividerY + 10);
-            }
-        }
-
-        function drawTextContent(ctx, cardWidth, cardHeight, startY) {
-            const contentStartY = startY || 340;
-            const contentMaxX = cardWidth - 36;
-            let y = contentStartY;
-
-            const sections = [];
-
-            if (generatedCard.description) {
-                sections.push({ label: 'Appearance', text: generatedCard.description });
-            }
-            if (generatedCard.personality) {
-                sections.push({ label: 'Personality', text: generatedCard.personality });
-            }
-            if (generatedCard.scenario) {
-                sections.push({ label: 'Scenario', text: generatedCard.scenario });
-            }
-
-            for (const section of sections) {
-                // Section divider
-                ctx.strokeStyle = '#2a2a4e';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(36, y);
-                ctx.lineTo(cardWidth - 36, y);
-                ctx.stroke();
-                y += 15;
-
-                // Section label
-                ctx.fillStyle = '#e94560';
-                ctx.font = 'bold 16px Segoe UI, sans-serif';
-                ctx.textBaseline = 'top';
-                ctx.fillText(section.label, 36, y);
-                y += 22;
-
-                // Section text
-                ctx.fillStyle = '#c8d6e5';
-                ctx.font = '14px Segoe UI, sans-serif';
-                const maxWidth = cardWidth - 72;
-                y = wrapText(ctx, section.text, 36, y, maxWidth, 20, '#c8d6e5', '14px Segoe UI, sans-serif');
-                y += 20;
-
-                // Check if we're running out of space
-                if (y > cardHeight - 40) {
-                    break;
-                }
-            }
-        }
 
         function wrapText(ctx, text, x, y, maxWidth, lineHeight, color, font) {
             ctx.fillStyle = color;
@@ -1043,7 +925,8 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
             const cardHeight = pngCanvas.height;
 
             // Character name
-            const name = generatedCard.name || 'Character Name';
+            const card = getCardData();
+            const name = card.name || 'Character Name';
             const nameY = 300;
 
             ctx.fillStyle = '#e94560';
@@ -1067,14 +950,14 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
             let y = dividerY + 15;
 
             const sections = [];
-            if (generatedCard.description) {
-                sections.push({ label: 'Appearance', text: generatedCard.description });
+            if (card.description) {
+                sections.push({ label: 'Appearance', text: card.description });
             }
-            if (generatedCard.personality) {
-                sections.push({ label: 'Personality', text: generatedCard.personality });
+            if (card.personality) {
+                sections.push({ label: 'Personality', text: card.personality });
             }
-            if (generatedCard.scenario) {
-                sections.push({ label: 'Scenario', text: generatedCard.scenario });
+            if (card.scenario) {
+                sections.push({ label: 'Scenario', text: card.scenario });
             }
 
             for (const section of sections) {
@@ -1109,7 +992,7 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
             ctx.textAlign = 'start';
 
             // Export
-            const filename = `${generatedCard.name || 'character'}_card.png`;
+            const filename = `${card.name || 'character'}_card.png`;
             const dataUrl = pngCanvas.toDataURL('image/png');
             const a = document.createElement('a');
             a.href = dataUrl;

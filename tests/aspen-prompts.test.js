@@ -205,6 +205,7 @@ test('manual story summary update writes generated summary to state and textarea
     $(id) {
       return id === 'updateSummaryBtn' ? btn : null;
     },
+    guardBusy() { return false; },
     saveSettings() {},
     persistSettings() {
       persisted = true;
@@ -254,6 +255,7 @@ test('manual story summary update leaves existing summary unchanged on failure',
     $(id) {
       return id === 'updateSummaryBtn' ? btn : null;
     },
+    guardBusy() { return false; },
     saveSettings() {},
     persistSettings() {
       throw new Error('Should not persist on failed summary.');
@@ -288,6 +290,7 @@ test('clear story summary requires confirmation before clearing state and textar
   const context = loadFunctions(['clearStorySummary'], {
     state,
     storySummaryEl,
+    guardBusy() { return false; },
     async showConfirm() {
       return confirmResult;
     },

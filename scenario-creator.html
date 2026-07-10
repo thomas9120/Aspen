@@ -346,6 +346,14 @@
         let currentTab = 'json';
         let generatedCard = null;
 
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
         const form = document.getElementById('scenarioForm');
         const generateBtn = document.getElementById('generateBtn');
         const copyBtn = document.getElementById('copyBtn');
@@ -434,22 +442,20 @@
                 return;
             }
 
-            let content = '';
+            let text = '';
             if (currentTab === 'json') {
-                content = `<pre>${JSON.stringify(generatedCard, null, 2)}</pre>`;
+                text = JSON.stringify(generatedCard, null, 2);
             } else {
-                content = '<pre>';
-                if (generatedCard.title) content += `Title: ${generatedCard.title}\n\n`;
-                if (generatedCard.description) content += `Description:\n${generatedCard.description}\n\n`;
-                if (generatedCard.world_info) content += `World Info:\n${generatedCard.world_info}\n\n`;
-                if (generatedCard.starting_scene) content += `Starting Scene:\n${generatedCard.starting_scene}\n\n`;
-                if (generatedCard.scenario_goal) content += `Scenario Goal:\n${generatedCard.scenario_goal}\n\n`;
-                if (generatedCard.world_info_entries) content += `World Info Entries:\n${JSON.stringify(generatedCard.world_info_entries, null, 2)}\n\n`;
-                if (generatedCard.lorebook) content += `Lorebook:\n${JSON.stringify(generatedCard.lorebook, null, 2)}\n\n`;
-                if (generatedCard.tags && generatedCard.tags.length > 0) content += `Tags: ${generatedCard.tags.join(', ')}`;
-                content += '</pre>';
+                if (generatedCard.title) text += `Title: ${generatedCard.title}\n\n`;
+                if (generatedCard.description) text += `Description:\n${generatedCard.description}\n\n`;
+                if (generatedCard.world_info) text += `World Info:\n${generatedCard.world_info}\n\n`;
+                if (generatedCard.starting_scene) text += `Starting Scene:\n${generatedCard.starting_scene}\n\n`;
+                if (generatedCard.scenario_goal) text += `Scenario Goal:\n${generatedCard.scenario_goal}\n\n`;
+                if (generatedCard.world_info_entries) text += `World Info Entries:\n${JSON.stringify(generatedCard.world_info_entries, null, 2)}\n\n`;
+                if (generatedCard.lorebook) text += `Lorebook:\n${JSON.stringify(generatedCard.lorebook, null, 2)}\n\n`;
+                if (generatedCard.tags && generatedCard.tags.length > 0) text += `Tags: ${generatedCard.tags.join(', ')}`;
             }
-            previewContent.innerHTML = content;
+            previewContent.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
         }
 
         async function copyToClipboard() {
