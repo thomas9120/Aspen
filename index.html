@@ -1595,6 +1595,7 @@ const state = {
 
 const DEFAULT_SETTINGS = { ...state.settings };
 const CONTEXT_HISTORY_LIMIT = 12;
+const LLM_TIMEOUT_MS = 120000;
 
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
@@ -2182,6 +2183,7 @@ function toggleCollapsible(header) {
 
 function syncSamplerNumber(slider, targetId) {
   $(targetId).value = slider.value;
+  saveSettings();
 }
 
 function syncSamplerSlider(numInput, targetId) {
@@ -2195,6 +2197,7 @@ function syncSamplerSlider(numInput, targetId) {
   } else {
     numInput.value = $(targetId).value;
   }
+  saveSettings();
 }
 
 function rollD20() {
@@ -2253,7 +2256,8 @@ function renderEntry(role, text, meta, index, edited) {
 
 function appendLog(role, text, meta) {
   state.gameLog.push({ role, content: text });
-  renderEntry(role, text, meta, state.gameLog.length - 1, false);
+  const displayText = meta ? stripRollText(text) : text;
+  renderEntry(role, displayText, meta, state.gameLog.length - 1, false);
   updateCharacterPresence();
   updateSetupChecklist();
 }
@@ -2509,20 +2513,32 @@ async function callLLM(messages, role) {
     max_tokens: state.settings.maxTokens
   };
   if (state.settings.topK > 0) body.top_k = state.settings.topK;
-  const res = await fetch(`${ep.url.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(ep.key ? { 'Authorization': `Bearer ${ep.key}` } : {})
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`API error ${res.status}: ${txt}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${ep.url.replace(/\/$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ep.key ? { 'Authorization': `Bearer ${ep.key}` } : {})
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`API error ${res.status}: ${txt}`);
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content?.trim() || '';
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new Error(`Request timed out after ${LLM_TIMEOUT_MS / 1000} seconds.`);
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || '';
 }
 
 function buildGmNarrativePrompt() {
@@ -2657,7 +2673,7 @@ async function sendUserAction() {
   const result = applyHandicap(rawRoll, true);
   showDice(result.final, state.settings.userName);
   const rollMeta = `Roll: ${result.final}`;
-  appendLog('user', `${text} [${rollMeta}]`);
+  appendLog('user', `${text} [${rollMeta}]`, rollMeta);
   state.pendingAction = {
     user: {
       name: state.settings.userName,
@@ -2725,7 +2741,7 @@ async function resolveAiAction(action) {
   const result = applyHandicap(rawRoll, false);
   showDice(result.final, state.settings.aiName);
   const rollMeta = `Roll: ${result.final}`;
-  appendLog('ai', `${action} [${rollMeta}]`);
+  appendLog('ai', `${action} [${rollMeta}]`, rollMeta);
   if (!state.pendingAction?.user) {
     state.pendingAction = {
       user: { name: state.settings.userName, action: 'Passes for now.', roll: null, rollMeta: 'No roll' },
@@ -3003,7 +3019,11 @@ function importScenario(input) {
 function importSave(input) {
   readJsonFile(input, data => {
     if (data.format !== 'aspen-save-v1') { showToast('Unrecognized save format.', 'error'); return; }
+    const localApiKey = state.settings.apiKey;
+    const localAiApiKey = state.settings.aiApiKey;
     state.settings = normalizeSettings(data.settings);
+    if (!state.settings.apiKey) state.settings.apiKey = localApiKey;
+    if (!state.settings.aiApiKey) state.settings.aiApiKey = localAiApiKey;
     state.scenario = data.scenario || null;
     state.userCard = data.user_card || null;
     state.aiCard = data.ai_card || null;
@@ -3030,7 +3050,7 @@ function exportSave() {
   const payload = {
     format: 'aspen-save-v1',
     exported_at: new Date().toISOString(),
-    settings: serializeSettings(state.settings),
+    settings: { ...serializeSettings(state.settings), api_key: '', ai_api_key: '' },
     scenario: state.scenario,
     user_card: state.userCard,
     ai_card: state.aiCard,
@@ -3044,6 +3064,7 @@ function exportSave() {
   a.download = `aspen-save-${Date.now()}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
+  showToast('Save exported. API keys are not included in save files.', 'success');
 }
 
 function normalizeCharacterCard(data) {
@@ -3140,18 +3161,20 @@ async function regenerateGmResponse() {
   setBusy(true);
   setStatus('Regenerating GM response...');
   showTypingIndicator();
+  const removedEntry = state.gameLog.pop();
   try {
-    state.gameLog.pop();
     const prompt = buildGmNarrativePrompt();
     const text = await callLLM(prompt, 'gm');
     removeTypingIndicator();
-    appendLog('gm', text);
+    state.gameLog.push({ role: 'gm', content: text });
+    renderLog();
     setStatus(`Waiting for ${state.settings.userName}...`);
     showToast('GM response regenerated.', 'success');
   } catch (e) {
     removeTypingIndicator();
-    appendLog('gm', `[Error regenerating: ${e.message}]`);
+    state.gameLog.push(removedEntry);
     setStatus('Error — see log');
+    showToast(`Regeneration failed: ${e.message}`, 'error');
   } finally {
     setBusy(false);
   }
@@ -3251,10 +3274,20 @@ if (logSearchEl) {
   });
 }
 
-['apiUrl', 'userName', 'aiName', 'scenarioGoal'].forEach(id => {
+['apiUrl', 'apiKey', 'model', 'aiApiUrl', 'aiApiKey', 'aiModel', 'userName', 'aiName',
+ 'userModifier', 'aiModifier', 'scenarioGoal'].forEach(id => {
   const el = $(id);
   if (!el) return;
   el.addEventListener('input', () => {
+    saveSettings();
+    updateAllUi();
+  });
+});
+
+['manualToggle', 'gmManualToggle', 'userHandicap', 'aiHandicap'].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener('change', () => {
     saveSettings();
     updateAllUi();
   });

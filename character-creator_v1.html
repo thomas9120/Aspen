@@ -487,6 +487,14 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
         let generatedCard = null;
         let characterImage = null;
 
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
         // DOM Elements
         const form = document.getElementById('characterForm');
         const generateBtn = document.getElementById('generateBtn');
@@ -579,25 +587,23 @@ Character: Oh, a bit of everything! Potions, maps, ancient artifacts..."></texta
                 return;
             }
 
-            let content = '';
+            let text = '';
             if (currentTab === 'json') {
-                content = `<pre>${JSON.stringify(generatedCard, null, 2)}</pre>`;
+                text = JSON.stringify(generatedCard, null, 2);
             } else {
                 // Plain text format
-                content = '<pre>';
-                if (generatedCard.name) content += `Name: ${generatedCard.name}\n\n`;
-                if (generatedCard.description) content += `Description:\n${generatedCard.description}\n\n`;
-                if (generatedCard.personality) content += `Personality:\n${generatedCard.personality}\n\n`;
-                if (generatedCard.scenario) content += `Scenario:\n${generatedCard.scenario}\n\n`;
-                if (generatedCard.first_mes) content += `First Message:\n${generatedCard.first_mes}\n\n`;
-                if (generatedCard.mes_example) content += `Example Dialogue:\n${generatedCard.mes_example}\n\n`;
-                if (generatedCard.creator_notes) content += `Creator Notes:\n${generatedCard.creator_notes}\n\n`;
-                if (generatedCard.system_prompt) content += `System Prompt:\n${generatedCard.system_prompt}\n\n`;
-                if (generatedCard.tags && generatedCard.tags.length > 0) content += `Tags: ${generatedCard.tags.join(', ')}`;
-                content += '</pre>';
+                if (generatedCard.name) text += `Name: ${generatedCard.name}\n\n`;
+                if (generatedCard.description) text += `Description:\n${generatedCard.description}\n\n`;
+                if (generatedCard.personality) text += `Personality:\n${generatedCard.personality}\n\n`;
+                if (generatedCard.scenario) text += `Scenario:\n${generatedCard.scenario}\n\n`;
+                if (generatedCard.first_mes) text += `First Message:\n${generatedCard.first_mes}\n\n`;
+                if (generatedCard.mes_example) text += `Example Dialogue:\n${generatedCard.mes_example}\n\n`;
+                if (generatedCard.creator_notes) text += `Creator Notes:\n${generatedCard.creator_notes}\n\n`;
+                if (generatedCard.system_prompt) text += `System Prompt:\n${generatedCard.system_prompt}\n\n`;
+                if (generatedCard.tags && generatedCard.tags.length > 0) text += `Tags: ${generatedCard.tags.join(', ')}`;
             }
 
-            previewContent.innerHTML = content;
+            previewContent.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
         }
 
         // Copy to clipboard
