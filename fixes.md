@@ -4,6 +4,8 @@ Review date: 2026-07-10 (branch: `experimental`)
 
 Status legend: [ ] open · [x] fixed
 
+All findings resolved as of 2026-07-10.
+
 ## Bugs
 
 ### 1. "Re-roll GM" leaves the old response on screen — `index.html` (`regenerateGmResponse`) [HIGH VALUE / LOW RISK]
@@ -13,7 +15,7 @@ Status legend: [ ] open · [x] fixed
 - **Fix:** pop only on success and re-render the log (`renderLog()`), matching `undoLastRound`.
 
 ### 2. Stray word "erotic" in the resolution prompt — `index.html` (resolution system prompt)
-- [ ] Open — needs owner confirmation
+- [x] Fixed — word removed from the resolution system prompt
 - The GM resolution system prompt lists scene tones as "calm, dramatic, comedic, mysterious, **erotic**, or dangerous." The word appears nowhere else (not in the narrative prompt, AGENTS.md, or docs) and nudges every round-resolution the model writes.
 - **Fix:** remove the word, or document it if intentional.
 
@@ -23,17 +25,17 @@ Status legend: [ ] open · [x] fixed
 - **Fix:** attach `change`/`input` listeners (calling `saveSettings()`) to all sidebar settings controls.
 
 ### 4. Escape strands the round in a half-canceled state — `index.html` (document keydown handler)
-- [ ] Open
+- [x] Fixed — Escape now fully cancels the round: the user's pending declaration is removed from the log and its text returned to the input box. The GM review modal intentionally cannot be dismissed with Escape (must confirm or re-roll); documented in AGENTS.md.
 - Escape while the AI review modal is open closes it and sets phase to `user`, but leaves `state.pendingAction` populated (including `aiDraft`); the pending-round panel keeps showing the draft and the user's logged declaration is never resolved. GM review modal can't be dismissed with Escape at all (inconsistent).
 - **Fix:** fully cancel the round (clear `pendingAction`) or don't allow Escape to dismiss; make both modals behave the same.
 
 ### 5. Story summary prompt grows without bound — `index.html` (`buildStorySummaryPrompt`)
-- [ ] Open
+- [x] Fixed — `state.summarizedThrough` tracks the merged boundary; only unsummarized entries are sent. Kept in sync by undo/restart/clear/import, persisted in localStorage and save exports (`summarized_through`).
 - Sends *all* entries older than the last 12 every time, including entries already merged into the summary on previous updates. Long sessions will overflow the backend context — on the feature meant to save context.
 - **Fix:** track a "summarized through index N" marker in state/saves and only send new older entries.
 
 ### 6. Sidebar actions aren't locked during requests — `index.html` (`setBusy`)
-- [ ] Open
+- [x] Fixed — a global `llmBusy` flag (set inside `callLLM`, covering all request paths including modal regens) guards Start/Restart, Undo Round, Re-roll GM, Update/Clear Summary, Clear Output, Import Save, send/skip.
 - `setBusy()` only disables `#inputBar`. Start/Restart, Undo Round, Re-roll GM, and Update Summary remain clickable mid-request, causing overlapping LLM calls and state races (e.g., restart mid-AI-turn appends the stale AI action into the fresh game).
 - **Fix:** guard game-mutating sidebar actions behind the busy flag.
 
@@ -62,32 +64,29 @@ Status legend: [ ] open · [x] fixed
 - **Fix:** add a timeout via `AbortController`; optionally a cancel button later.
 
 ### 11. `min_p` / `repetition_penalty` always sent — `index.html` (`callLLM`)
-- [ ] Open
+- [x] Fixed — `min_p` omitted at 0, `repetition_penalty` omitted at 1.0 (matching the existing `top_k: 0` handling).
 - The real OpenAI API rejects unknown arguments, so "any OpenAI-compatible endpoint" breaks against api.openai.com.
 - **Fix:** omit them at their "off" values (min_p 0, repetition_penalty 1.0), like `top_k: 0` is handled.
 
 ### 12. `first_message` / `example_dialogue` imported but never used in prompts — `index.html`
-- [ ] Open
-- **Fix idea:** use `first_message` as the AI player's opening line; include example dialogue as few-shot flavor in `buildAiPrompt` — or drop from import docs.
+- [x] Fixed — `buildAiPrompt` now appends a `[VOICE EXAMPLES]` block (first_message + example_dialogue, `{{user}}`/`{{char}}` placeholders replaced with configured names) to the AI system prompt as style reference.
 
 ### 13. Regenerating a resolution uses the narrative prompt — `index.html` (`regenerateGmResponse`)
-- [ ] Open
-- Re-roll GM after a round resolution rebuilds via `buildGmNarrativePrompt`, losing the dice-scale instructions.
+- [x] Fixed — after popping the GM entry, `getUnresolvedRound()` detects trailing declarations and regenerates with `buildRoundResolutionPrompt` (dice scale + parsed actions/rolls); otherwise the narrative prompt is used.
 - **Fix:** detect that the popped entry resolved a round and rebuild via `buildRoundResolutionPrompt`.
 
 ### 14. Dead code in character creator — `character-creator_v1.html`
-- [ ] Open
+- [x] Fixed — dead functions removed (~137 lines). Export now nests card fields under `data` per the Character Card V2 spec, the loader reads both nested V2 and flat legacy cards, and Aspen's importer accepts nested cards without a description.
 - `drawCharacterCard` / `drawTextContent` are never called (`exportPNG` uses `drawCharacterCardText`).
 - Also: the "SillyTavern JSON" output sets `spec: 'chara_card_v2'` but keeps fields flat instead of nesting under `data`, so it isn't spec-compliant, and the loader can't read real V2 (nested `data`) cards.
 
 ### 15. Docs mismatch: external font dependency — `index.html` / `AGENTS.md`
-- [ ] Open
+- [x] Fixed — AGENTS.md now states the single optional Google Fonts stylesheet and that it degrades gracefully offline (font kept intentionally).
 - AGENTS.md says "No external CDN dependencies," but `index.html` `@import`s Crimson Text from Google Fonts (silent failure offline).
 
 ### 16. GM and user share the same role icon — `index.html` (`renderEntry`)
-- [ ] Open
-- Both use `&#9876;` (⚔). Probably intended to differ.
+- [x] Fixed — user entries now use a shield icon (`&#128737;`); GM keeps the crossed swords.
 
 ### 17. Import Save mid-round sets phase to `user` — `index.html` (`importSave`)
-- [ ] Open
+- [x] Fixed — on import, unresolved trailing declarations are detected and Aspen offers to resolve the round immediately (AI turn or GM resolution as appropriate). The game log and summary marker now also persist to localStorage, so refreshing the page restores the session.
 - If the save ends on a user/AI declaration, that round can never resolve. Imported game log also isn't persisted to localStorage (refresh loses story; only settings persist).
